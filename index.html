@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Math Tank Battle PvP (Mobile)</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+        * {
+            box-sizing: border-box;
+            touch-action: none; /* Prevent zooming/scrolling on mobile */
+            user-select: none; /* Prevent text selection */
+            -webkit-user-select: none;
+        }
+
+        body {
+            background-color: #2c3e50;
+            color: white;
+            font-family: 'Press Start 2P', monospace;
+            margin: 0;
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            display: flex;
+            /* Default to Portrait logic (column) - changed via media query */
+            flex-direction: column; 
+        }
+
+        /* --- LAYOUT CONTAINERS --- */
+
+        /* Player Control Zones */
+        .player-zone {
+            flex: 1; /* Take up available space */
+            background: #34495e;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px;
+            position: relative;
+            z-index: 10;
+        }
+
+        /* Game Area */
+        #game-wrapper {
+            flex: 2; /* Game board takes more space if possible */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #000;
+            position: relative;
+            overflow: hidden;
+        }
+
+        canvas {
+            background-color: #000;
+            border: 2px solid #7f8c8d;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            image-rendering: pixelated;
+            /* Make canvas responsive but maintain aspect ratio */
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+
+        /* --- CONTROLS UI --- */
+
+        .controls-container {
+            display: flex;
+            flex-direction: row;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .dpad {
+            display: grid;
+            grid-template-columns: 50px 50px 50px;
+            grid-template-rows: 50px 50px 50px;
+            gap: 5px;
+        }
+
+        .btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.2rem;
+            cursor: pointer;
+        }
+
+        .btn:active, .btn.pressed {
+            background: rgba(255, 255, 255, 0.4);
+        }
+
+        /* D-Pad Positioning */
+        .btn-up { grid-column: 2; grid-row: 1; }
+        .btn-left { grid-column: 1; grid-row: 2; }
+        .btn-down { grid-column: 2; grid-row: 3; }
+        .btn-right { grid-column: 3; grid-row: 2; }
+
+        /* Action Buttons */
+        .action-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-shoot {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: #e74c3c;
+            border-color: #c0392b;
+            font-size: 0.8rem;
+        }
+        .btn-shoot:active { background: #ff6b6b; }
+
+        .player-info {
+            position: absolute;
+            font-size: 0.7rem;
+            background: rgba(0,0,0,0.5);
+            padding: 5px 10px;
+            border-radius: 4px;
+            border: 1px solid white;
+        }
+
+        /* Player Specific Colors */
+        #p1-zone { border-top: 4px solid #2ecc71; }
+        #p1-zone .player-info { color: #2ecc71; top: 10px; left: 10px; }
+        
+        #p2-zone { border-bottom: 4px solid #3498db; }
+        #p2-zone .player-info { color: #3498db; bottom: 10px; right: 10px; }
+
+        /* --- MEDIA QUERIES FOR LAYOUT --- */
+
+        /* PORTRAIT MODE (Top/Bottom) */
+        @media (orientation: portrait) {
+            body { flex-direction: column; }
+            
+            /* P2 (Top) */
+            #p2-zone { 
+                order: 1; 
+                transform: rotate(180deg); /* Face-to-face gameplay */
+                border-bottom: none;
+                border-top: 4px solid #3498db;
+            }
+            #game-wrapper { order: 2; }
+            #p1-zone { order: 3; }
+
+            .controls-container { flex-direction: row; }
+        }
+
+        /* LANDSCAPE MODE (Left/Right) */
+        @media (orientation: landscape) {
+            body { flex-direction: row; }
+
+            /* P1 (Left) */
+            #p1-zone { 
+                order: 1; 
+                border-top: none;
+                border-right: 4px solid #2ecc71;
+                flex-direction: column; /* Stack controls vertically on side */
+            }
+            #p1-zone .player-info { top: 10px; left: 50%; transform: translateX(-50%); }
+
+            #game-wrapper { order: 2; }
+
+            /* P2 (Right) */
+            #p2-zone { 
+                order: 3; 
+                border-bottom: none;
+                border-left: 4px solid #3498db;
+                flex-direction: column;
+            }
+            #p2-zone .player-info { bottom: 10px; left: 50%; transform: translateX(-50%); }
+            
+            .controls-container { flex-direction: column-reverse; gap: 30px; }
+        }
+
+        /* Modal styling */
+        #game-over-modal {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.95);
+            border: 4px solid #fff;
+            padding: 20px;
+            text-align: center;
+            display: none;
+            z-index: 100;
+            width: 80%;
+            max-width: 400px;
+        }
+        #game-over-modal button {
+            margin-top: 20px;
+            padding: 15px;
+            width: 100%;
+            font-family: inherit;
+            background: #e74c3c;
+            color: white;
+            border: none;
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- PLAYER 2 ZONE (Blue) -->
+    <div id="p2-zone" class="player-zone">
+        <div class="player-info" id="p2-stats">P2 HP: 5 | AMMO: 0</div>
+        <div class="controls-container">
+            <div class="action-group">
+                <div class="btn btn-shoot" id="btn-p2-shoot" data-key="Enter">SHOOT</div>
+            </div>
+            <div class="dpad">
+                <div class="btn btn-up" data-key="ArrowUp">▲</div>
+                <div class="btn btn-left" data-key="ArrowLeft">◄</div>
+                <div class="btn btn-down" data-key="ArrowDown">▼</div>
+                <div class="btn btn-right" data-key="ArrowRight">►</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- GAME CANVAS -->
+    <div id="game-wrapper">
+        <canvas id="game-canvas" width="800" height="600"></canvas>
+        <div id="game-over-modal">
+            <h2 id="winner-text">WINNER</h2>
+            <p id="win-reason">Reason</p>
+            <button onclick="resetGame()">PLAY AGAIN</button>
+        </div>
+    </div>
+
+    <!-- PLAYER 1 ZONE (Green) -->
+    <div id="p1-zone" class="player-zone">
+        <div class="player-info" id="p1-stats">P1 HP: 5 | AMMO: 0</div>
+        <div class="controls-container">
+            <div class="dpad">
+                <div class="btn btn-up" data-key="KeyW">W</div>
+                <div class="btn btn-left" data-key="KeyA">A</div>
+                <div class="btn btn-down" data-key="KeyS">S</div>
+                <div class="btn btn-right" data-key="KeyD">D</div>
+            </div>
+            <div class="action-group">
+                <div class="btn btn-shoot" id="btn-p1-shoot" data-key="Space">SHOOT</div>
+            </div>
+        </div>
+    </div>
+
+<script>
+/** * --- CORE GAME LOGIC ---
+ * (Same physics/logic as before, adapted for Touch Inputs)
+ */
+
+const canvas = document.getElementById('game-canvas');
+const ctx = canvas.getContext('2d');
+const TILE_SIZE = 40;
+const MAP_ROWS = 15; 
+const MAP_COLS = 20; 
+
+// Input State
+const keys = {};
+
+// Touch Input Handlers
+function bindTouchControls() {
+    const buttons = document.querySelectorAll('.btn');
+    
+    buttons.forEach(btn => {
+        const key = btn.getAttribute('data-key');
+        
+        // Touch Events
+        btn.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            keys[key] = true;
+            btn.classList.add('pressed');
+        }, {passive: false});
+
+        btn.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            keys[key] = false;
+            btn.classList.remove('pressed');
+        });
+
+        // Mouse Events (for desktop testing)
+        btn.addEventListener('mousedown', (e) => {
+            keys[key] = true;
+            btn.classList.add('pressed');
+        });
+        btn.addEventListener('mouseup', (e) => {
+            keys[key] = false;
+            btn.classList.remove('pressed');
+        });
+        btn.addEventListener('mouseleave', (e) => {
+            keys[key] = false;
+            btn.classList.remove('pressed');
+        });
+    });
+}
+
+// Keyboard Listeners
+window.addEventListener('keydown', e => {
+    keys[e.code] = true;
+    if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight","Space"].indexOf(e.code) > -1) {
+        e.preventDefault();
+    }
+});
+window.addEventListener('keyup', e => keys[e.code] = false);
+
+// Game Variables
+let gameOver = false;
+let mathProblem = null;
+let mathTimer = 0;
+let items = []; 
+let bullets = [];
+let particles = [];
+let floatingTexts = [];
+let p1, p2;
+let walls = [];
+
+// Map Codes: 0=Empty, 1=Brick, 2=Steel, 3=Water, 9=Base
+const INITIAL_MAP = [
+    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0,0,2,9,2,0,0,0,0,0,0,0,0,0], 
+    [0,0,1,1,1,0,0,0,2,0,2,0,0,0,1,1,1,0,0,0],
+    [0,0,1,0,1,0,0,0,0,0,0,0,0,0,1,0,1,0,0,0],
+    [0,0,1,1,1,0,2,1,0,0,0,1,2,0,1,1,1,0,0,0],
+    [0,0,0,0,0,0,2,0,0,0,0,0,2,0,0,0,0,0,0,0],
+    [0,1,0,1,2,2,2,0,0,0,0,0,2,2,2,1,0,1,0,0],
+    [0,0,0,0,0,0,0,0,3,3,3,0,0,0,0,0,0,0,0,0], 
+    [0,1,0,1,2,2,2,0,0,0,0,0,2,2,2,1,0,1,0,0],
+    [0,0,0,0,0,0,2,0,0,0,0,0,2,0,0,0,0,0,0,0],
+    [0,0,1,1,1,0,2,1,0,0,0,1,2,0,1,1,1,0,0,0],
+    [0,0,1,0,1,0,0,0,0,0,0,0,0,0,1,0,1,0,0,0],
+    [0,0,1,1,1,0,0,0,2,0,2,0,0,0,1,1,1,0,0,0],
+    [0,0,0,0,0,0,0,0,2,9,2,0,0,0,0,0,0,0,0,0], 
+    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+];
+
+const BASES = [
+    { id: 1, x: 9.5 * TILE_SIZE, y: 13.5 * TILE_SIZE, hp: 1, owner: 1, active: true },
+    { id: 2, x: 9.5 * TILE_SIZE, y: 1.5 * TILE_SIZE, hp: 1, owner: 2, active: true } 
+];
+
+// Classes
+class Tank {
+    constructor(id, x, y, color, controls) {
+        this.id = id;
+        this.x = x;
+        this.y = y;
+        this.width = 30;
+        this.height = 30;
+        this.color = color;
+        this.controls = controls;
+        this.speed = 3;
+        this.dir = 0; 
+        this.hp = 5;
+        this.ammo = 0;
+        this.shootCooldown = 0;
+        this.invulnerable = 0;
+    }
+
+    update() {
+        if (this.hp <= 0) return;
+        if (this.shootCooldown > 0) this.shootCooldown--;
+        if (this.invulnerable > 0) this.invulnerable--;
+
+        let dx = 0;
+        let dy = 0;
+        
+        // Controls (Keys or Touch via mapped key codes)
+        if (keys[this.controls.up]) { dy = -this.speed; this.dir = 0; }
+        else if (keys[this.controls.down]) { dy = this.speed; this.dir = 2; }
+        else if (keys[this.controls.left]) { dx = -this.speed; this.dir = 3; }
+        else if (keys[this.controls.right]) { dx = this.speed; this.dir = 1; }
+
+        if (dx !== 0 || dy !== 0) {
+            if (!this.checkCollision(this.x + dx, this.y)) this.x += dx;
+            if (!this.checkCollision(this.x, this.y + dy)) this.y += dy;
+        }
+
+        this.x = Math.max(0, Math.min(canvas.width - this.width, this.x));
+        this.y = Math.max(0, Math.min(canvas.height - this.height, this.y));
+
+        if (keys[this.controls.shoot] && this.shootCooldown <= 0 && this.ammo > 0) {
+            this.shoot();
+        }
+
+        this.checkItemCollection();
+    }
+
+    checkCollision(newX, newY) {
+        let rect = {x: newX, y: newY, w: this.width, h: this.height};
+        for (let w of walls) { if (rectIntersect(rect, w)) return true; }
+        let other = this.id === 1 ? p2 : p1;
+        if (other.hp > 0 && rectIntersect(rect, {x: other.x, y: other.y, w: other.width, h: other.height})) return true;
+        for (let b of BASES) {
+            if (b.active && rectIntersect(rect, {x: b.x - 15, y: b.y - 15, w: 30, h: 30})) return true;
+        }
+        return false;
+    }
+
+    checkItemCollection() {
+        for (let i = items.length - 1; i >= 0; i--) {
+            let item = items[i];
+            let itemRect = {x: item.x, y: item.y, w: TILE_SIZE-4, h: TILE_SIZE-4};
+            let tankRect = {x: this.x, y: this.y, w: this.width, h: this.height};
+
+            if (rectIntersect(tankRect, itemRect)) {
+                if (item.isCorrect) {
+                    this.ammo += 3;
+                    createFloatingText(this.x, this.y, "+3 AMMO", "#2ecc71");
+                } else {
+                    if (this.invulnerable <= 0) {
+                        this.hp -= 1;
+                        this.invulnerable = 60; 
+                        createFloatingText(this.x, this.y, "-1 HP", "#e74c3c");
+                        createExplosion(this.x + this.width/2, this.y + this.height/2, "red");
+                        checkWinCondition();
+                    }
+                }
+                items.splice(i, 1);
+            }
+        }
+    }
+
+    shoot() {
+        this.ammo--;
+        this.shootCooldown = 30; 
+        let bx = this.x + this.width/2;
+        let by = this.y + this.height/2;
+        let speed = 7;
+        let vx = 0, vy = 0;
+        if (this.dir === 0) { vy = -speed; by -= 20; }
+        if (this.dir === 1) { vx = speed; bx += 20; }
+        if (this.dir === 2) { vy = speed; by += 20; }
+        if (this.dir === 3) { vx = -speed; bx -= 20; }
+        bullets.push(new Bullet(bx, by, vx, vy, this.id));
+    }
+
+    draw() {
+        if (this.hp <= 0) return;
+        ctx.save();
+        ctx.translate(this.x + this.width/2, this.y + this.height/2);
+        ctx.rotate(this.dir * 90 * (Math.PI/180));
+        ctx.fillStyle = this.color;
+        if (this.invulnerable > 0 && Math.floor(Date.now() / 100) % 2 === 0) ctx.fillStyle = "#fff";
+        ctx.fillRect(-15, -15, 8, 30);
+        ctx.fillRect(7, -15, 8, 30);
+        ctx.fillStyle = this.color; 
+        if (this.invulnerable > 0 && Math.floor(Date.now() / 100) % 2 === 0) ctx.fillStyle = "#fff";
+        ctx.fillRect(-8, -12, 16, 24);
+        ctx.fillStyle = "#000"; // Dark turret
+        ctx.beginPath(); ctx.arc(0, 0, 6, 0, Math.PI*2); ctx.fill();
+        ctx.fillRect(-2, -18, 4, 18);
+        ctx.restore();
+    }
+}
+
+class Bullet {
+    constructor(x, y, vx, vy, ownerId) {
+        this.x = x; this.y = y; this.vx = vx; this.vy = vy; this.ownerId = ownerId; this.active = true;
+    }
+    update() {
+        this.x += this.vx; this.y += this.vy;
+        if (this.x < 0 || this.x > canvas.width || this.y < 0 || this.y > canvas.height) { this.active = false; return; }
+        
+        for (let i = walls.length - 1; i >= 0; i--) {
+            let w = walls[i];
+            if (this.x > w.x && this.x < w.x + w.w && this.y > w.y && this.y < w.y + w.h) {
+                this.active = false; createExplosion(this.x, this.y, "orange");
+                if (w.type === 1) walls.splice(i, 1);
+                return;
+            }
+        }
+        for (let base of BASES) {
+            if (!base.active) continue;
+            if (Math.hypot(this.x - base.x, this.y - base.y) < 20) {
+                this.active = false; base.hp--; createExplosion(base.x, base.y, "yellow");
+                if (base.hp <= 0) {
+                    base.active = false; createExplosion(base.x, base.y, "red", 50);
+                    let winnerName = (base.owner === 1) ? "Player 2" : "Player 1";
+                    endGame(winnerName, "Base Destroyed!");
+                }
+                return;
+            }
+        }
+        let target = this.ownerId === 1 ? p2 : p1;
+        if (target.hp > 0 && this.x > target.x && this.x < target.x + target.width && this.y > target.y && this.y < target.y + target.height) {
+            this.active = false; target.hp--; createExplosion(this.x, this.y, "red"); checkWinCondition();
+        }
+    }
+    draw() { ctx.fillStyle = "white"; ctx.beginPath(); ctx.arc(this.x, this.y, 3, 0, Math.PI*2); ctx.fill(); }
+}
+
+class Particle {
+    constructor(x, y, color) { this.x = x; this.y = y; this.vx = (Math.random()-0.5)*5; this.vy = (Math.random()-0.5)*5; this.life = 1.0; this.color = color; }
+    update() { this.x += this.vx; this.y += this.vy; this.life -= 0.05; }
+    draw() { ctx.globalAlpha = this.life; ctx.fillStyle = this.color; ctx.fillRect(this.x, this.y, 4, 4); ctx.globalAlpha = 1.0; }
+}
+
+function rectIntersect(r1, r2) {
+    return !(r2.x > r1.x + r1.w || r2.x + r2.w < r1.x || r2.y > r1.y + r1.h || r2.y + r2.h < r1.y);
+}
+function createExplosion(x, y, color, count=10) { for(let i=0; i<count; i++) particles.push(new Particle(x, y, color)); }
+function createFloatingText(x, y, text, color) { floatingTexts.push({x, y, text, color, life: 1.0}); }
+
+// Math Logic
+function generateMathProblem() {
+    let isAdd = Math.random() > 0.5;
+    let a = Math.floor(Math.random() * 9) + 1; 
+    let b = Math.floor(Math.random() * 9) + 1;
+    if (!isAdd && b > a) { let t = a; a = b; b = t; }
+    let ans = isAdd ? a + b : a - b;
+    spawnMathItems([ans, ans+Math.floor(Math.random()*5)+1, ans-Math.floor(Math.random()*4)-1].sort(() => Math.random()-0.5), ans);
+    return { text: `${a} ${isAdd ? "+" : "-"} ${b} = ?`, answer: ans };
+}
+function spawnMathItems(values, correctVal) {
+    items = [];
+    values.forEach(val => {
+        let placed = false, attempts = 0;
+        while (!placed && attempts < 50) {
+            let c = Math.floor(Math.random() * MAP_COLS), r = Math.floor(Math.random() * MAP_ROWS);
+            if (INITIAL_MAP[r][c] !== 0) { attempts++; continue; }
+            let x = c * TILE_SIZE + 2, y = r * TILE_SIZE + 2;
+            if (Math.hypot(x-p1.x, y-p1.y) < 60 || Math.hypot(x-p2.x, y-p2.y) < 60) { attempts++; continue; }
+            items.push({x, y, val, isCorrect: val === correctVal, creationTime: Date.now()});
+            placed = true;
+        }
+    });
+}
+function updateMathLogic() {
+    if (gameOver) return;
+    if (!mathProblem) {
+        if (items.length === 0) { mathProblem = generateMathProblem(); mathTimer = 600; }
+    } else {
+        mathTimer--;
+        if (mathTimer <= 0) { mathProblem = null; items = []; } else if (items.length === 0) mathProblem = null;
+    }
+}
+
+// Game Control
+function checkWinCondition() {
+    if (p1.hp <= 0) endGame("Player 2", "Player 1 Destroyed!");
+    if (p2.hp <= 0) endGame("Player 1", "Player 2 Destroyed!");
+}
+function endGame(winner, reason) {
+    if (gameOver) return;
+    gameOver = true;
+    document.getElementById('winner-text').innerText = winner + " WINS!";
+    document.getElementById('win-reason').innerText = reason;
+    document.getElementById('game-over-modal').style.display = "block";
+}
+function updateUI() {
+    document.getElementById('p1-stats').innerText = `P1 HP: ${p1.hp} | AMMO: ${p1.ammo}`;
+    document.getElementById('p2-stats').innerText = `P2 HP: ${p2.hp} | AMMO: ${p2.ammo}`;
+}
+
+// Draw Functions
+function drawHUD() {
+    ctx.save();
+    ctx.fillStyle = "rgba(0,0,0,0.5)"; ctx.fillRect(200, 0, 400, 40);
+    ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.font = "20px 'Press Start 2P', monospace";
+    if (mathProblem) {
+        ctx.fillStyle = "#f1c40f"; 
+        ctx.fillText(`${mathProblem.text} (${Math.ceil(mathTimer / 60)})`, 400, 25);
+    } else {
+        ctx.fillStyle = "#95a5a6"; ctx.fillText("WAITING...", 400, 25);
+    }
+    ctx.restore();
+}
+function drawMap() {
+    walls.forEach(w => {
+        if (w.type === 1) { ctx.fillStyle = "#d35400"; ctx.fillRect(w.x, w.y, w.w, w.h); ctx.fillStyle = "#e67e22"; ctx.fillRect(w.x+2, w.y+2, w.w-4, w.h-4); }
+        else if (w.type === 2) { ctx.fillStyle = "#bdc3c7"; ctx.fillRect(w.x, w.y, w.w, w.h); ctx.fillStyle = "#ecf0f1"; ctx.fillRect(w.x+5, w.y+5, w.w-10, w.h-10); }
+        else if (w.type === 3) { ctx.fillStyle = "#2980b9"; ctx.fillRect(w.x, w.y, w.w, w.h); }
+    });
+    BASES.forEach(b => {
+        if (!b.active) return;
+        ctx.fillStyle = b.owner === 1 ? "#27ae60" : "#2980b9";
+        ctx.beginPath(); ctx.arc(b.x, b.y, 15, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = "#f1c40f"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.font="20px Arial";
+        ctx.fillText(b.owner === 1 ? "🦅" : "⭐", b.x, b.y+2);
+    });
+}
+
+function gameLoop() {
+    if (gameOver) return;
+    p1.update(); p2.update();
+    bullets.forEach(b => b.update()); bullets = bullets.filter(b => b.active);
+    particles.forEach(p => p.update()); particles = particles.filter(p => p.life > 0);
+    floatingTexts.forEach(ft => ft.life -= 0.02); floatingTexts = floatingTexts.filter(ft => ft.life > 0);
+    updateMathLogic(); updateUI();
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    drawMap();
+    items.forEach(item => {
+        ctx.fillStyle = "#9b59b6"; ctx.fillRect(item.x, item.y, 36, 36);
+        ctx.strokeStyle = "#fff"; ctx.strokeRect(item.x, item.y, 36, 36);
+        ctx.fillStyle = "#fff"; ctx.font = "bold 16px sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+        ctx.fillText(item.val, item.x+18, item.y+18);
+    });
+    BASES.forEach(b => { if(!b.active) { ctx.fillStyle = "#555"; ctx.fillRect(b.x-15, b.y-15, 30, 30); } });
+    bullets.forEach(b => b.draw());
+    p1.draw(); p2.draw();
+    particles.forEach(p => p.draw());
+    drawHUD();
+    floatingTexts.forEach(ft => {
+        ctx.fillStyle = ft.color; ctx.globalAlpha = Math.max(0, ft.life);
+        ctx.font = "bold 14px sans-serif"; ctx.fillText(ft.text, ft.x, ft.y - (1.0 - ft.life) * 20);
+        ctx.globalAlpha = 1.0;
+    });
+
+    requestAnimationFrame(gameLoop);
+}
+
+function initGame() {
+    walls = [];
+    for (let r = 0; r < MAP_ROWS; r++) {
+        for (let c = 0; c < MAP_COLS; c++) {
+            let code = INITIAL_MAP[r][c];
+            if (code === 1 || code === 2 || code === 3) walls.push({x: c*40, y: r*40, w: 40, h: 40, type: code});
+        }
+    }
+    p1 = new Tank(1, 165, 525, "#2ecc71", {up: "KeyW", down: "KeyS", left: "KeyA", right: "KeyD", shoot: "Space"});
+    p2 = new Tank(2, 605, 45, "#3498db", {up: "ArrowUp", down: "ArrowDown", left: "ArrowLeft", right: "ArrowRight", shoot: "Enter"});
+    BASES.forEach(b => { b.hp = 1; b.active = true; });
+    bullets = []; items = []; particles = []; floatingTexts = []; gameOver = false;
+    document.getElementById('game-over-modal').style.display = "none";
+    mathTimer = 0; mathProblem = null;
+    
+    bindTouchControls();
+    gameLoop();
+}
+
+initGame();
+</script>
+</body>
+</html>
