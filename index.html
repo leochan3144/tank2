@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Math Tank Battle PvP (Mobile)</title>
+    <title>Math Tank Battle PvP (Final Fix)</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
 
         * {
             box-sizing: border-box;
-            touch-action: none; /* Prevent zooming/scrolling on mobile */
-            user-select: none; /* Prevent text selection */
+            touch-action: none;
+            user-select: none;
             -webkit-user-select: none;
         }
 
@@ -23,15 +23,12 @@
             width: 100vw;
             overflow: hidden;
             display: flex;
-            /* Default to Portrait logic (column) - changed via media query */
             flex-direction: column; 
         }
 
         /* --- LAYOUT CONTAINERS --- */
-
-        /* Player Control Zones */
         .player-zone {
-            flex: 1; /* Take up available space */
+            flex: 1;
             background: #34495e;
             display: flex;
             align-items: center;
@@ -41,9 +38,8 @@
             z-index: 10;
         }
 
-        /* Game Area */
         #game-wrapper {
-            flex: 2; /* Game board takes more space if possible */
+            flex: 2;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -57,19 +53,19 @@
             border: 2px solid #7f8c8d;
             box-shadow: 0 0 20px rgba(0,0,0,0.5);
             image-rendering: pixelated;
-            /* Make canvas responsive but maintain aspect ratio */
             max-width: 100%;
             max-height: 100%;
             object-fit: contain;
         }
 
         /* --- CONTROLS UI --- */
-
         .controls-container {
             display: flex;
             flex-direction: row;
-            gap: 20px;
+            gap: 15px;
             align-items: center;
+            justify-content: center;
+            width: 100%;
         }
 
         .dpad {
@@ -95,13 +91,11 @@
             background: rgba(255, 255, 255, 0.4);
         }
 
-        /* D-Pad Positioning */
         .btn-up { grid-column: 2; grid-row: 1; }
         .btn-left { grid-column: 1; grid-row: 2; }
         .btn-down { grid-column: 2; grid-row: 3; }
         .btn-right { grid-column: 3; grid-row: 2; }
 
-        /* Action Buttons */
         .action-group {
             display: flex;
             flex-direction: column;
@@ -128,48 +122,52 @@
             border: 1px solid white;
         }
 
-        /* Player Specific Colors */
+        .math-box {
+            background: #000;
+            border: 3px solid #f1c40f;
+            color: #f1c40f;
+            padding: 15px;
+            font-size: 0.9rem;
+            text-align: center;
+            min-width: 140px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(241, 196, 15, 0.3);
+        }
+
         #p1-zone { border-top: 4px solid #2ecc71; }
         #p1-zone .player-info { color: #2ecc71; top: 10px; left: 10px; }
         
         #p2-zone { border-bottom: 4px solid #3498db; }
         #p2-zone .player-info { color: #3498db; bottom: 10px; right: 10px; }
 
-        /* --- MEDIA QUERIES FOR LAYOUT --- */
-
-        /* PORTRAIT MODE (Top/Bottom) */
+        /* --- MEDIA QUERIES --- */
         @media (orientation: portrait) {
             body { flex-direction: column; }
-            
-            /* P2 (Top) */
             #p2-zone { 
                 order: 1; 
-                transform: rotate(180deg); /* Face-to-face gameplay */
+                transform: rotate(180deg);
                 border-bottom: none;
                 border-top: 4px solid #3498db;
             }
             #game-wrapper { order: 2; }
             #p1-zone { order: 3; }
-
             .controls-container { flex-direction: row; }
         }
 
-        /* LANDSCAPE MODE (Left/Right) */
         @media (orientation: landscape) {
             body { flex-direction: row; }
-
-            /* P1 (Left) */
             #p1-zone { 
                 order: 1; 
                 border-top: none;
                 border-right: 4px solid #2ecc71;
-                flex-direction: column; /* Stack controls vertically on side */
+                flex-direction: column;
             }
             #p1-zone .player-info { top: 10px; left: 50%; transform: translateX(-50%); }
-
             #game-wrapper { order: 2; }
-
-            /* P2 (Right) */
             #p2-zone { 
                 order: 3; 
                 border-bottom: none;
@@ -177,11 +175,10 @@
                 flex-direction: column;
             }
             #p2-zone .player-info { bottom: 10px; left: 50%; transform: translateX(-50%); }
-            
-            .controls-container { flex-direction: column-reverse; gap: 30px; }
+            .controls-container { flex-direction: column-reverse; gap: 20px; }
         }
 
-        /* Modal styling */
+        /* MODAL STYLING */
         #game-over-modal {
             position: absolute;
             top: 50%;
@@ -192,31 +189,38 @@
             padding: 20px;
             text-align: center;
             display: none;
-            z-index: 100;
+            z-index: 200; /* High Z-Index to ensure clickability */
             width: 80%;
             max-width: 400px;
+            box-shadow: 0 0 30px rgba(0,0,0,0.8);
         }
-        #game-over-modal button {
+        
+        #btn-restart {
             margin-top: 20px;
             padding: 15px;
             width: 100%;
             font-family: inherit;
             background: #e74c3c;
             color: white;
-            border: none;
+            border: 2px solid #c0392b;
+            font-size: 1rem;
+            cursor: pointer;
+            text-transform: uppercase;
         }
+        #btn-restart:hover { background: #ff6b6b; }
+        #btn-restart:active { transform: scale(0.98); }
 
     </style>
 </head>
 <body>
 
-    <!-- PLAYER 2 ZONE (Blue) -->
     <div id="p2-zone" class="player-zone">
         <div class="player-info" id="p2-stats">P2 HP: 5 | AMMO: 0</div>
         <div class="controls-container">
             <div class="action-group">
                 <div class="btn btn-shoot" id="btn-p2-shoot" data-key="Enter">SHOOT</div>
             </div>
+            <div id="p2-math" class="math-box">WAITING...</div>
             <div class="dpad">
                 <div class="btn btn-up" data-key="ArrowUp">▲</div>
                 <div class="btn btn-left" data-key="ArrowLeft">◄</div>
@@ -226,17 +230,15 @@
         </div>
     </div>
 
-    <!-- GAME CANVAS -->
     <div id="game-wrapper">
         <canvas id="game-canvas" width="800" height="600"></canvas>
         <div id="game-over-modal">
             <h2 id="winner-text">WINNER</h2>
             <p id="win-reason">Reason</p>
-            <button onclick="resetGame()">PLAY AGAIN</button>
+            <button id="btn-restart">PLAY AGAIN</button>
         </div>
     </div>
 
-    <!-- PLAYER 1 ZONE (Green) -->
     <div id="p1-zone" class="player-zone">
         <div class="player-info" id="p1-stats">P1 HP: 5 | AMMO: 0</div>
         <div class="controls-container">
@@ -246,6 +248,7 @@
                 <div class="btn btn-down" data-key="KeyS">S</div>
                 <div class="btn btn-right" data-key="KeyD">D</div>
             </div>
+            <div id="p1-math" class="math-box">WAITING...</div>
             <div class="action-group">
                 <div class="btn btn-shoot" id="btn-p1-shoot" data-key="Space">SHOOT</div>
             </div>
@@ -253,9 +256,7 @@
     </div>
 
 <script>
-/** * --- CORE GAME LOGIC ---
- * (Same physics/logic as before, adapted for Touch Inputs)
- */
+/** * --- CORE GAME LOGIC --- */
 
 const canvas = document.getElementById('game-canvas');
 const ctx = canvas.getContext('2d');
@@ -266,52 +267,37 @@ const MAP_COLS = 20;
 // Input State
 const keys = {};
 
-// Touch Input Handlers
-function bindTouchControls() {
-    const buttons = document.querySelectorAll('.btn');
-    
-    buttons.forEach(btn => {
-        const key = btn.getAttribute('data-key');
-        
-        // Touch Events
-        btn.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            keys[key] = true;
-            btn.classList.add('pressed');
-        }, {passive: false});
+// Audio
+const AudioContext = window.AudioContext || window.webkitAudioContext;
+let audioCtx = new AudioContext();
 
-        btn.addEventListener('touchend', (e) => {
-            e.preventDefault();
-            keys[key] = false;
-            btn.classList.remove('pressed');
-        });
+function playSound(type) {
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    const osc = audioCtx.createOscillator();
+    const gainNode = audioCtx.createGain();
+    osc.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
 
-        // Mouse Events (for desktop testing)
-        btn.addEventListener('mousedown', (e) => {
-            keys[key] = true;
-            btn.classList.add('pressed');
-        });
-        btn.addEventListener('mouseup', (e) => {
-            keys[key] = false;
-            btn.classList.remove('pressed');
-        });
-        btn.addEventListener('mouseleave', (e) => {
-            keys[key] = false;
-            btn.classList.remove('pressed');
-        });
-    });
+    if (type === 'shoot') {
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.1);
+        gainNode.gain.setValueAtTime(0.05, audioCtx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.1);
+    } else if (type === 'damage') {
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(100, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(10, audioCtx.currentTime + 0.2);
+        gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.2);
+    }
 }
 
-// Keyboard Listeners
-window.addEventListener('keydown', e => {
-    keys[e.code] = true;
-    if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight","Space"].indexOf(e.code) > -1) {
-        e.preventDefault();
-    }
-});
-window.addEventListener('keyup', e => keys[e.code] = false);
-
-// Game Variables
+// Global Game Variables
 let gameOver = false;
 let mathProblem = null;
 let mathTimer = 0;
@@ -321,12 +307,14 @@ let particles = [];
 let floatingTexts = [];
 let p1, p2;
 let walls = [];
+let animationFrameId = null;
 
-// Map Codes: 0=Empty, 1=Brick, 2=Steel, 3=Water, 9=Base
+// Map Configuration
+// 0=Empty, 1=Brick, 2=Steel, 3=Water, 9=Base
 const INITIAL_MAP = [
-    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,0,0,0], 
     [0,0,0,0,0,0,0,0,2,9,2,0,0,0,0,0,0,0,0,0], 
-    [0,0,1,1,1,0,0,0,2,0,2,0,0,0,1,1,1,0,0,0],
+    [0,0,1,1,1,0,0,0,2,2,2,0,0,0,1,1,1,0,0,0], // Steel Wall (White Box) in front of base
     [0,0,1,0,1,0,0,0,0,0,0,0,0,0,1,0,1,0,0,0],
     [0,0,1,1,1,0,2,1,0,0,0,1,2,0,1,1,1,0,0,0],
     [0,0,0,0,0,0,2,0,0,0,0,0,2,0,0,0,0,0,0,0],
@@ -336,9 +324,9 @@ const INITIAL_MAP = [
     [0,0,0,0,0,0,2,0,0,0,0,0,2,0,0,0,0,0,0,0],
     [0,0,1,1,1,0,2,1,0,0,0,1,2,0,1,1,1,0,0,0],
     [0,0,1,0,1,0,0,0,0,0,0,0,0,0,1,0,1,0,0,0],
-    [0,0,1,1,1,0,0,0,2,0,2,0,0,0,1,1,1,0,0,0],
+    [0,0,1,1,1,0,0,0,2,2,2,0,0,0,1,1,1,0,0,0], // Steel Wall (White Box) in front of base
     [0,0,0,0,0,0,0,0,2,9,2,0,0,0,0,0,0,0,0,0], 
-    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+    [0,0,0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,0,0,0]  
 ];
 
 const BASES = [
@@ -346,22 +334,11 @@ const BASES = [
     { id: 2, x: 9.5 * TILE_SIZE, y: 1.5 * TILE_SIZE, hp: 1, owner: 2, active: true } 
 ];
 
-// Classes
 class Tank {
     constructor(id, x, y, color, controls) {
-        this.id = id;
-        this.x = x;
-        this.y = y;
-        this.width = 30;
-        this.height = 30;
-        this.color = color;
-        this.controls = controls;
-        this.speed = 3;
-        this.dir = 0; 
-        this.hp = 5;
-        this.ammo = 0;
-        this.shootCooldown = 0;
-        this.invulnerable = 0;
+        this.id = id; this.x = x; this.y = y; this.width = 30; this.height = 30;
+        this.color = color; this.controls = controls; this.speed = 3; this.dir = 0; 
+        this.hp = 5; this.ammo = 0; this.shootCooldown = 0; this.invulnerable = 0;
     }
 
     update() {
@@ -369,10 +346,7 @@ class Tank {
         if (this.shootCooldown > 0) this.shootCooldown--;
         if (this.invulnerable > 0) this.invulnerable--;
 
-        let dx = 0;
-        let dy = 0;
-        
-        // Controls (Keys or Touch via mapped key codes)
+        let dx = 0, dy = 0;
         if (keys[this.controls.up]) { dy = -this.speed; this.dir = 0; }
         else if (keys[this.controls.down]) { dy = this.speed; this.dir = 2; }
         else if (keys[this.controls.left]) { dx = -this.speed; this.dir = 3; }
@@ -389,7 +363,6 @@ class Tank {
         if (keys[this.controls.shoot] && this.shootCooldown <= 0 && this.ammo > 0) {
             this.shoot();
         }
-
         this.checkItemCollection();
     }
 
@@ -418,6 +391,7 @@ class Tank {
                     if (this.invulnerable <= 0) {
                         this.hp -= 1;
                         this.invulnerable = 60; 
+                        playSound('damage');
                         createFloatingText(this.x, this.y, "-1 HP", "#e74c3c");
                         createExplosion(this.x + this.width/2, this.y + this.height/2, "red");
                         checkWinCondition();
@@ -431,10 +405,9 @@ class Tank {
     shoot() {
         this.ammo--;
         this.shootCooldown = 30; 
-        let bx = this.x + this.width/2;
-        let by = this.y + this.height/2;
-        let speed = 7;
-        let vx = 0, vy = 0;
+        playSound('shoot');
+        let bx = this.x + this.width/2, by = this.y + this.height/2;
+        let speed = 7, vx = 0, vy = 0;
         if (this.dir === 0) { vy = -speed; by -= 20; }
         if (this.dir === 1) { vx = speed; bx += 20; }
         if (this.dir === 2) { vy = speed; by += 20; }
@@ -454,7 +427,7 @@ class Tank {
         ctx.fillStyle = this.color; 
         if (this.invulnerable > 0 && Math.floor(Date.now() / 100) % 2 === 0) ctx.fillStyle = "#fff";
         ctx.fillRect(-8, -12, 16, 24);
-        ctx.fillStyle = "#000"; // Dark turret
+        ctx.fillStyle = "#000";
         ctx.beginPath(); ctx.arc(0, 0, 6, 0, Math.PI*2); ctx.fill();
         ctx.fillRect(-2, -18, 4, 18);
         ctx.restore();
@@ -481,6 +454,7 @@ class Bullet {
             if (!base.active) continue;
             if (Math.hypot(this.x - base.x, this.y - base.y) < 20) {
                 this.active = false; base.hp--; createExplosion(base.x, base.y, "yellow");
+                playSound('damage');
                 if (base.hp <= 0) {
                     base.active = false; createExplosion(base.x, base.y, "red", 50);
                     let winnerName = (base.owner === 1) ? "Player 2" : "Player 1";
@@ -491,7 +465,9 @@ class Bullet {
         }
         let target = this.ownerId === 1 ? p2 : p1;
         if (target.hp > 0 && this.x > target.x && this.x < target.x + target.width && this.y > target.y && this.y < target.y + target.height) {
-            this.active = false; target.hp--; createExplosion(this.x, this.y, "red"); checkWinCondition();
+            this.active = false; target.hp--; 
+            playSound('damage');
+            createExplosion(this.x, this.y, "red"); checkWinCondition();
         }
     }
     draw() { ctx.fillStyle = "white"; ctx.beginPath(); ctx.arc(this.x, this.y, 3, 0, Math.PI*2); ctx.fill(); }
@@ -555,24 +531,23 @@ function endGame(winner, reason) {
     document.getElementById('win-reason').innerText = reason;
     document.getElementById('game-over-modal').style.display = "block";
 }
+
 function updateUI() {
     document.getElementById('p1-stats').innerText = `P1 HP: ${p1.hp} | AMMO: ${p1.ammo}`;
     document.getElementById('p2-stats').innerText = `P2 HP: ${p2.hp} | AMMO: ${p2.ammo}`;
+    
+    let mathText = "WAITING...";
+    let styleColor = "#95a5a6";
+    if (mathProblem) {
+        mathText = `${mathProblem.text}<br><span style="font-size:0.7em">(${Math.ceil(mathTimer / 60)}s)</span>`;
+        styleColor = "#f1c40f";
+    }
+    const p1Math = document.getElementById('p1-math');
+    const p2Math = document.getElementById('p2-math');
+    p1Math.innerHTML = mathText; p2Math.innerHTML = mathText;
+    p1Math.style.borderColor = styleColor; p2Math.style.borderColor = styleColor;
 }
 
-// Draw Functions
-function drawHUD() {
-    ctx.save();
-    ctx.fillStyle = "rgba(0,0,0,0.5)"; ctx.fillRect(200, 0, 400, 40);
-    ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.font = "20px 'Press Start 2P', monospace";
-    if (mathProblem) {
-        ctx.fillStyle = "#f1c40f"; 
-        ctx.fillText(`${mathProblem.text} (${Math.ceil(mathTimer / 60)})`, 400, 25);
-    } else {
-        ctx.fillStyle = "#95a5a6"; ctx.fillText("WAITING...", 400, 25);
-    }
-    ctx.restore();
-}
 function drawMap() {
     walls.forEach(w => {
         if (w.type === 1) { ctx.fillStyle = "#d35400"; ctx.fillRect(w.x, w.y, w.w, w.h); ctx.fillStyle = "#e67e22"; ctx.fillRect(w.x+2, w.y+2, w.w-4, w.h-4); }
@@ -608,17 +583,41 @@ function gameLoop() {
     bullets.forEach(b => b.draw());
     p1.draw(); p2.draw();
     particles.forEach(p => p.draw());
-    drawHUD();
     floatingTexts.forEach(ft => {
         ctx.fillStyle = ft.color; ctx.globalAlpha = Math.max(0, ft.life);
         ctx.font = "bold 14px sans-serif"; ctx.fillText(ft.text, ft.x, ft.y - (1.0 - ft.life) * 20);
         ctx.globalAlpha = 1.0;
     });
 
-    requestAnimationFrame(gameLoop);
+    animationFrameId = requestAnimationFrame(gameLoop);
+}
+
+// --- INITIALIZATION ---
+
+function bindControls() {
+    const buttons = document.querySelectorAll('.btn');
+    buttons.forEach(btn => {
+        const key = btn.getAttribute('data-key');
+        btn.addEventListener('touchstart', (e) => { e.preventDefault(); keys[key] = true; btn.classList.add('pressed'); if (audioCtx.state === 'suspended') audioCtx.resume(); }, {passive: false});
+        btn.addEventListener('touchend', (e) => { e.preventDefault(); keys[key] = false; btn.classList.remove('pressed'); });
+        btn.addEventListener('mousedown', (e) => { keys[key] = true; btn.classList.add('pressed'); if (audioCtx.state === 'suspended') audioCtx.resume(); });
+        btn.addEventListener('mouseup', (e) => { keys[key] = false; btn.classList.remove('pressed'); });
+        btn.addEventListener('mouseleave', (e) => { keys[key] = false; btn.classList.remove('pressed'); });
+    });
+    window.addEventListener('keydown', e => { keys[e.code] = true; if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight","Space"].indexOf(e.code)>-1)e.preventDefault(); if (audioCtx.state === 'suspended') audioCtx.resume(); });
+    window.addEventListener('keyup', e => keys[e.code] = false);
+    
+    // Explicitly bind Restart Button
+    document.getElementById('btn-restart').addEventListener('click', () => {
+        initGame();
+    });
 }
 
 function initGame() {
+    // 1. Stop existing loop
+    if (animationFrameId) cancelAnimationFrame(animationFrameId);
+    
+    // 2. Reset Arrays/Variables
     walls = [];
     for (let r = 0; r < MAP_ROWS; r++) {
         for (let c = 0; c < MAP_COLS; c++) {
@@ -626,18 +625,29 @@ function initGame() {
             if (code === 1 || code === 2 || code === 3) walls.push({x: c*40, y: r*40, w: 40, h: 40, type: code});
         }
     }
+    
     p1 = new Tank(1, 165, 525, "#2ecc71", {up: "KeyW", down: "KeyS", left: "KeyA", right: "KeyD", shoot: "Space"});
     p2 = new Tank(2, 605, 45, "#3498db", {up: "ArrowUp", down: "ArrowDown", left: "ArrowLeft", right: "ArrowRight", shoot: "Enter"});
-    BASES.forEach(b => { b.hp = 1; b.active = true; });
-    bullets = []; items = []; particles = []; floatingTexts = []; gameOver = false;
-    document.getElementById('game-over-modal').style.display = "none";
-    mathTimer = 0; mathProblem = null;
     
-    bindTouchControls();
+    BASES.forEach(b => { b.hp = 1; b.active = true; });
+    bullets = []; items = []; particles = []; floatingTexts = [];
+    
+    // 3. Reset Game State
+    gameOver = false;
+    mathTimer = 0; 
+    mathProblem = null;
+    
+    // 4. Reset UI
+    document.getElementById('game-over-modal').style.display = "none";
+    
+    // 5. Start Loop
     gameLoop();
 }
 
+// Start everything
+bindControls();
 initGame();
+
 </script>
 </body>
 </html>
