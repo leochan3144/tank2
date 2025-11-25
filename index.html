@@ -9,7 +9,7 @@
 
         * {
             box-sizing: border-box;
-            touch-action: none;
+            touch-action: none; /* Global touch disable for game control */
             user-select: none;
             -webkit-user-select: none;
         }
@@ -58,12 +58,14 @@
             max-width: 300px;
             cursor: pointer;
             text-align: center;
+            /* Allow standard touch clicks on menu buttons */
+            touch-action: manipulation; 
         }
         .mode-btn:active { background: #2ecc71; border-color: #27ae60; }
 
         /* --- GAME CONTAINER --- */
         #game-container {
-            display: none; /* Hidden until mode selected */
+            display: none; /* Hidden by default */
             width: 100%;
             height: 100%;
             position: relative;
@@ -181,7 +183,8 @@
         }
         .btn-shoot:active { background: #ff6b6b; }
 
-        /* --- MODE 1: LANDSCAPE (Default Flex Row) --- */
+        /* --- MODE 1: LANDSCAPE (Flex Row) --- */
+        /* Using Higher Specificity to override #game-container display:none */
         body.mode-landscape #game-container {
             display: flex;
             flex-direction: row;
@@ -200,69 +203,41 @@
             border-left: 4px solid #3498db;
             order: 3;
         }
-        /* Color themes */
         #p1-zone .player-info { color: #2ecc71; border-color: #2ecc71; }
         #p2-zone .player-info { color: #3498db; border-color: #3498db; }
 
 
-        /* --- MODE 2: PORTRAIT 1 (Opposite / Rotated) --- */
+        /* --- MODE 2: PORTRAIT 1 (Opposite) --- */
         body.mode-portrait-1 #game-container {
             display: flex;
             flex-direction: column;
         }
-        body.mode-portrait-1 #p2-zone {
-            order: 1;
-            height: 180px;
-            border-bottom: 2px solid #3498db;
-            /* Rotate P2 CCW 90 degrees */
-            transform: rotate(-90deg);
-            /* Adjust width to fit since rotation flips dimensions visually */
-            width: 100vh; 
-            height: 25vw;
-            position: absolute;
-            top: 0; left: 100%; 
-            transform-origin: top left;
-        }
-        /* Reset P2 layout for the rotated container */
-        body.mode-portrait-1 #p2-zone .controls-row { flex-direction: row-reverse; }
-
-        body.mode-portrait-1 #game-wrapper {
-            order: 2;
-            flex: 1;
-            /* Add padding to account for the absolute rotated divs if needed, 
-               but flex logic usually handles non-absolute. 
-               However, with 90deg rotation, sizing is tricky. 
-               Let's simplify: Use Flex column, but rotate CONTENT inside. */
-        }
-        
-        /* Revised Approach for Rotation to keep layout sanity */
         body.mode-portrait-1 .player-zone {
             flex: none;
             height: 220px;
             width: 100%;
             justify-content: center;
         }
-        
         body.mode-portrait-1 #p2-zone {
             order: 1;
             background: #2c3e50;
             border-bottom: 4px solid #3498db;
         }
+        /* Rotate content inside P2 for opposite player */
         body.mode-portrait-1 #p2-inner {
-            transform: rotate(-90deg);
+            transform: rotate(180deg); 
         }
-
+        body.mode-portrait-1 #game-wrapper {
+            order: 2;
+            flex: 1;
+        }
         body.mode-portrait-1 #p1-zone {
             order: 3;
             background: #2c3e50;
             border-top: 4px solid #2ecc71;
         }
-        body.mode-portrait-1 #p1-inner {
-            transform: rotate(90deg);
-        }
 
-
-        /* --- MODE 3: PORTRAIT 2 (Overlay / Same Side) --- */
+        /* --- MODE 3: PORTRAIT 2 (Overlay) --- */
         body.mode-portrait-2 #game-container {
             display: block;
         }
@@ -290,7 +265,6 @@
             align-items: flex-end;
         }
         
-        /* Transparent Styles for Overlay */
         body.mode-portrait-2 .btn, 
         body.mode-portrait-2 .btn-shoot, 
         body.mode-portrait-2 .player-info,
@@ -304,9 +278,8 @@
             font-size: 0.6rem;
             margin-bottom: 5px;
         }
-        /* Specific layout tweaks for overlay compacting */
         body.mode-portrait-2 .controls-row {
-            flex-direction: column-reverse; /* Put buttons below math */
+            flex-direction: column-reverse;
             gap: 10px;
         }
         body.mode-portrait-2 #p1-zone .controls-row { align-items: flex-start; }
@@ -347,7 +320,8 @@
     <div id="game-container">
         
         <div id="p1-zone" class="player-zone">
-            <div id="p1-inner"> <div class="info-stack">
+            <div id="p1-inner"> 
+                <div class="info-stack">
                     <div class="player-info" id="p1-stats">P1 HP: 5 | AMMO: 0</div>
                     <div id="p1-math" class="math-box">WAITING...</div>
                 </div>
@@ -373,7 +347,8 @@
         </div>
 
         <div id="p2-zone" class="player-zone">
-            <div id="p2-inner"> <div class="info-stack">
+            <div id="p2-inner"> 
+                <div class="info-stack">
                     <div class="player-info" id="p2-stats">P2 HP: 5 | AMMO: 0</div>
                     <div id="p2-math" class="math-box">WAITING...</div>
                 </div>
@@ -403,12 +378,23 @@ const MAP_COLS = 20;
 // Input State
 const keys = {};
 
-// Audio
+// Audio (Initialized Lazily)
 const AudioContext = window.AudioContext || window.webkitAudioContext;
-let audioCtx = new AudioContext();
+let audioCtx = null;
+
+function initAudio() {
+    if (!audioCtx) {
+        audioCtx = new AudioContext();
+    }
+    if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+    }
+}
 
 function playSound(type) {
+    if (!audioCtx) return; // Audio not ready
     if (audioCtx.state === 'suspended') audioCtx.resume();
+    
     const osc = audioCtx.createOscillator();
     const gainNode = audioCtx.createGain();
     osc.connect(gainNode);
@@ -731,14 +717,16 @@ function gameLoop() {
 // --- INITIALIZATION ---
 
 function startGame(mode) {
+    // 1. Initialize Audio immediately on user interaction
+    initAudio();
+
+    // 2. Hide Start Screen
     document.getElementById('start-screen').style.display = 'none';
-    document.getElementById('game-container').style.display = 'block'; // Will be flex or block based on class
     
-    // Apply Mode Class
-    document.body.className = ''; // Reset
-    document.body.classList.add('mode-' + mode);
+    // 3. Set Body Class (CSS handles the display:flex/block logic)
+    document.body.className = 'mode-' + mode;
     
-    // Initialize Game
+    // 4. Initialize Game Loop
     initGame();
 }
 
@@ -748,15 +736,25 @@ function bindControls() {
         const key = btn.getAttribute('data-key');
         if(!key) return;
         
-        btn.addEventListener('touchstart', (e) => { e.preventDefault(); keys[key] = true; btn.classList.add('pressed'); if (audioCtx.state === 'suspended') audioCtx.resume(); }, {passive: false});
+        btn.addEventListener('touchstart', (e) => { 
+            e.preventDefault(); 
+            keys[key] = true; 
+            btn.classList.add('pressed'); 
+            initAudio(); // Ensure audio wakes up on any button press
+        }, {passive: false});
+
         btn.addEventListener('touchend', (e) => { e.preventDefault(); keys[key] = false; btn.classList.remove('pressed'); });
         
-        btn.addEventListener('mousedown', (e) => { keys[key] = true; btn.classList.add('pressed'); if (audioCtx.state === 'suspended') audioCtx.resume(); });
+        btn.addEventListener('mousedown', (e) => { 
+            keys[key] = true; 
+            btn.classList.add('pressed'); 
+            initAudio(); 
+        });
         btn.addEventListener('mouseup', (e) => { keys[key] = false; btn.classList.remove('pressed'); });
         btn.addEventListener('mouseleave', (e) => { keys[key] = false; btn.classList.remove('pressed'); });
     });
     
-    window.addEventListener('keydown', e => { keys[e.code] = true; if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight","Space"].indexOf(e.code)>-1)e.preventDefault(); if (audioCtx.state === 'suspended') audioCtx.resume(); });
+    window.addEventListener('keydown', e => { keys[e.code] = true; if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight","Space"].indexOf(e.code)>-1)e.preventDefault(); initAudio(); });
     window.addEventListener('keyup', e => keys[e.code] = false);
 
     document.getElementById('btn-restart').addEventListener('click', () => {
