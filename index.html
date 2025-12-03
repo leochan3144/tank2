@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Math Tank Battle - Fair Play Update</title>
+    <title>Math Tank Battle - iPad Fix</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
 
@@ -210,10 +210,12 @@
             display: flex;
             flex-direction: column;
         }
+        /* UPDATED: Removed fixed height, using auto with padding for iPad support */
         body.mode-portrait-1 .player-zone {
-            flex: none;
-            height: 220px;
+            flex: 0 0 auto; 
+            height: auto;
             width: 100%;
+            padding: 20px 0;
             justify-content: center;
         }
         body.mode-portrait-1 #p2-zone {
@@ -225,9 +227,7 @@
             transform: rotate(180deg); 
         }
         
-        /* --- FIX P2 CONTROLS IN PORTRAIT 1 --- 
-           Swap UP/DOWN and LEFT/RIGHT so controls match the upside-down perspective 
-        */
+        /* P2 CONTROLS SWAPPED (Fair Play) */
         body.mode-portrait-1 #p2-zone .btn-up { grid-row: 3; }   
         body.mode-portrait-1 #p2-zone .btn-down { grid-row: 1; } 
         body.mode-portrait-1 #p2-zone .btn-left { grid-column: 3; }
@@ -236,6 +236,7 @@
         body.mode-portrait-1 #game-wrapper {
             order: 2;
             flex: 1;
+            min-height: 0; /* Important for flex scaling */
         }
         body.mode-portrait-1 #p1-zone {
             order: 3;
