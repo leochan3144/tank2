@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Math Tank Battle - Fixed P2 Controls</title>
+    <title>Math Tank Battle - Fair Play Update</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
 
@@ -226,12 +226,12 @@
         }
         
         /* --- FIX P2 CONTROLS IN PORTRAIT 1 --- 
-           In 180deg rotation, Row 1 (Top) becomes Bottom.
-           We swap ArrowUp and ArrowDown grid positions so that 
-           the button physically pointing to the enemy sends ArrowDown (Forward). 
+           Swap UP/DOWN and LEFT/RIGHT so controls match the upside-down perspective 
         */
-        body.mode-portrait-1 #p2-zone .btn-up { grid-row: 3; }   /* Move Retreat to back */
-        body.mode-portrait-1 #p2-zone .btn-down { grid-row: 1; } /* Move Advance to front */
+        body.mode-portrait-1 #p2-zone .btn-up { grid-row: 3; }   
+        body.mode-portrait-1 #p2-zone .btn-down { grid-row: 1; } 
+        body.mode-portrait-1 #p2-zone .btn-left { grid-column: 3; }
+        body.mode-portrait-1 #p2-zone .btn-right { grid-column: 1; }
 
         body.mode-portrait-1 #game-wrapper {
             order: 2;
@@ -630,7 +630,10 @@ function spawnMathItems(values, correctVal) {
             if (INITIAL_MAP[r][c] !== 0) { attempts++; continue; }
             let x = c * TILE_SIZE + 2, y = r * TILE_SIZE + 2;
             if (Math.hypot(x-p1.x, y-p1.y) < 60 || Math.hypot(x-p2.x, y-p2.y) < 60) { attempts++; continue; }
-            items.push({x, y, val, isCorrect: val === correctVal, creationTime: Date.now()});
+            
+            // Randomly assign orientation (0 or 180 degrees) for fair play
+            let rotation = Math.random() > 0.5 ? Math.PI : 0;
+            items.push({x, y, val, isCorrect: val === correctVal, creationTime: Date.now(), rotation: rotation});
             placed = true;
         }
     });
@@ -701,10 +704,20 @@ function gameLoop() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     drawMap();
     items.forEach(item => {
+        // Draw the item box
         ctx.fillStyle = "#9b59b6"; ctx.fillRect(item.x, item.y, 36, 36);
         ctx.strokeStyle = "#fff"; ctx.strokeRect(item.x, item.y, 36, 36);
-        ctx.fillStyle = "#fff"; ctx.font = "bold 16px sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
-        ctx.fillText(item.val, item.x+18, item.y+18);
+        
+        // Draw the number text (Rotated based on item.rotation)
+        ctx.save();
+        ctx.translate(item.x + 18, item.y + 18); // Translate to center of box
+        ctx.rotate(item.rotation); // Rotate (0 or 180 deg)
+        ctx.fillStyle = "#fff"; 
+        ctx.font = "bold 16px sans-serif"; 
+        ctx.textAlign = "center"; 
+        ctx.textBaseline = "middle";
+        ctx.fillText(item.val, 0, 0);
+        ctx.restore();
     });
     BASES.forEach(b => { if(!b.active) { ctx.fillStyle = "#555"; ctx.fillRect(b.x-15, b.y-15, 30, 30); } });
     bullets.forEach(b => b.draw());
