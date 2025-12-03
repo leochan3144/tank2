@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Math Tank Battle - iPad Fix</title>
+    <title>Math Tank Battle - Layout Update</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
 
@@ -76,9 +76,9 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            padding: 10px;
+            padding: 5px; /* Reduced padding */
             z-index: 10;
-            gap: 15px;
+            gap: 5px;
             background: #34495e;
         }
         
@@ -106,40 +106,41 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 10px;
+            gap: 5px;
             width: 100%;
-            margin-bottom: 10px;
+            margin-bottom: 5px;
         }
 
         .player-info {
-            font-size: 0.7rem;
-            padding: 5px;
+            font-size: 0.6rem;
+            padding: 4px;
             border: 1px solid white;
             background: rgba(0,0,0,0.3);
             text-align: center;
-            width: 100%;
+            white-space: nowrap;
         }
 
         .math-box {
             background: #000;
-            border: 3px solid #f1c40f;
+            border: 2px solid #f1c40f;
             color: #f1c40f;
-            padding: 10px;
-            font-size: 0.7rem;
+            padding: 5px;
+            font-size: 0.6rem;
             text-align: center;
-            width: 100%;
-            min-height: 60px;
+            min-height: 30px;
             display: flex;
             justify-content: center;
             align-items: center;
-            flex-direction: column;
             border-radius: 4px;
+            white-space: nowrap;
         }
 
         .controls-row {
             display: flex;
             flex-direction: row;
             align-items: center;
+            width: 100%;
+            justify-content: center; /* Default center, overridden in modes */
             gap: 15px;
         }
 
@@ -179,45 +180,35 @@
             justify-content: center;
             align-items: center;
             text-align: center;
+            cursor: pointer;
         }
-        .btn-shoot:active { background: #ff6b6b; }
+        .btn-shoot:active, .btn-shoot.pressed { background: #ff6b6b; }
 
-        /* --- MODE 1: LANDSCAPE (Flex Row) --- */
-        body.mode-landscape #game-container {
-            display: flex;
-            flex-direction: row;
-        }
-        body.mode-landscape #p1-zone {
-            width: 200px;
-            border-right: 4px solid #2ecc71;
-            order: 1;
-        }
-        body.mode-landscape #game-wrapper {
-            flex: 1;
-            order: 2;
-        }
-        body.mode-landscape #p2-zone {
-            width: 200px;
-            border-left: 4px solid #3498db;
-            order: 3;
-        }
+
+        /* --- MODE 1: LANDSCAPE --- */
+        body.mode-landscape #game-container { display: flex; flex-direction: row; }
+        body.mode-landscape #p1-zone { width: 200px; border-right: 4px solid #2ecc71; order: 1; }
+        body.mode-landscape #game-wrapper { flex: 1; order: 2; }
+        body.mode-landscape #p2-zone { width: 200px; border-left: 4px solid #3498db; order: 3; }
         #p1-zone .player-info { color: #2ecc71; border-color: #2ecc71; }
         #p2-zone .player-info { color: #3498db; border-color: #3498db; }
 
 
-        /* --- MODE 2: PORTRAIT 1 (Opposite / Rotated) --- */
+        /* --- MODE 2: PORTRAIT 1 (Opposite / Head-to-Head) --- */
         body.mode-portrait-1 #game-container {
             display: flex;
             flex-direction: column;
         }
-        /* UPDATED: Removed fixed height, using auto with padding for iPad support */
+        
         body.mode-portrait-1 .player-zone {
-            flex: 0 0 auto; 
-            height: auto;
+            flex: none;
+            height: 160px; /* Reduced height to maximize map */
             width: 100%;
-            padding: 20px 0;
-            justify-content: center;
+            justify-content: flex-start;
+            padding: 5px 15px; /* Add side padding */
         }
+
+        /* Rotate P2 */
         body.mode-portrait-1 #p2-zone {
             order: 1;
             background: #2c3e50;
@@ -225,9 +216,36 @@
         }
         body.mode-portrait-1 #p2-inner {
             transform: rotate(180deg); 
+            width: 100%;
         }
-        
-        /* P2 CONTROLS SWAPPED (Fair Play) */
+
+        /* P1 Zone */
+        body.mode-portrait-1 #p1-zone {
+            order: 3;
+            background: #2c3e50;
+            border-top: 4px solid #2ecc71;
+        }
+        body.mode-portrait-1 #p1-inner {
+            width: 100%;
+        }
+
+        /* Layout Changes for Portrait 1: Single Row Info */
+        body.mode-portrait-1 .info-stack {
+            flex-direction: row;
+            justify-content: space-between;
+            width: 100%;
+        }
+        body.mode-portrait-1 .player-info { flex: 1; margin-right: 10px; }
+        body.mode-portrait-1 .math-box { flex: 1; }
+
+        /* Layout Changes for Portrait 1: Corner Controls */
+        body.mode-portrait-1 .controls-row {
+            justify-content: space-between; /* Push items to edges */
+            width: 100%;
+            margin-top: 5px;
+        }
+
+        /* Fix P2 Controls Logic (Swapped grid) */
         body.mode-portrait-1 #p2-zone .btn-up { grid-row: 3; }   
         body.mode-portrait-1 #p2-zone .btn-down { grid-row: 1; } 
         body.mode-portrait-1 #p2-zone .btn-left { grid-column: 3; }
@@ -236,80 +254,48 @@
         body.mode-portrait-1 #game-wrapper {
             order: 2;
             flex: 1;
-            min-height: 0; /* Important for flex scaling */
-        }
-        body.mode-portrait-1 #p1-zone {
-            order: 3;
-            background: #2c3e50;
-            border-top: 4px solid #2ecc71;
         }
 
-        /* --- MODE 3: PORTRAIT 2 (Overlay / Top Controls) --- */
-        body.mode-portrait-2 #game-container {
-            display: block;
-        }
+
+        /* --- MODE 3: PORTRAIT 2 (Overlay / Transparent) --- */
+        body.mode-portrait-2 #game-container { display: block; }
         body.mode-portrait-2 #game-wrapper {
-            width: 100%;
-            height: 100%;
-            position: absolute;
-            top: 0; left: 0;
-            z-index: 1;
+            width: 100%; height: 100%; position: absolute; top: 0; left: 0; z-index: 1;
         }
         body.mode-portrait-2 .player-zone {
-            position: absolute;
-            top: 10px;
-            background: transparent;
-            z-index: 20;
-            padding: 0;
-            width: auto;
+            position: absolute; top: 10px; background: transparent; z-index: 20; padding: 0; width: auto;
         }
-        body.mode-portrait-2 #p1-zone {
-            left: 10px;
-            align-items: flex-start;
-        }
-        body.mode-portrait-2 #p2-zone {
-            right: 10px;
-            align-items: flex-end;
-        }
+        body.mode-portrait-2 #p1-zone { left: 10px; align-items: flex-start; }
+        body.mode-portrait-2 #p2-zone { right: 10px; align-items: flex-end; }
         
+        /* High Transparency for Viewability */
         body.mode-portrait-2 .btn, 
         body.mode-portrait-2 .btn-shoot, 
         body.mode-portrait-2 .player-info,
         body.mode-portrait-2 .math-box {
-            background: rgba(0, 0, 0, 0.4);
-            backdrop-filter: blur(2px);
-            border-color: rgba(255,255,255,0.4);
+            background: rgba(0, 0, 0, 0.15); /* Much more transparent */
+            backdrop-filter: none;
+            border-color: rgba(255,255,255,0.2);
+            color: rgba(255,255,255,0.8);
         }
         body.mode-portrait-2 .math-box {
-            min-height: 40px;
-            font-size: 0.6rem;
-            margin-bottom: 5px;
+            min-height: 40px; font-size: 0.6rem; margin-bottom: 5px;
         }
         body.mode-portrait-2 .controls-row {
-            flex-direction: column-reverse;
-            gap: 10px;
+            flex-direction: column-reverse; gap: 10px;
         }
         body.mode-portrait-2 #p1-zone .controls-row { align-items: flex-start; }
         body.mode-portrait-2 #p2-zone .controls-row { align-items: flex-end; }
 
         /* Modal styling */
         #game-over-modal {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(0, 0, 0, 0.95);
-            border: 4px solid #fff;
-            padding: 20px;
-            text-align: center;
-            display: none;
-            z-index: 200;
-            width: 80%;
-            max-width: 400px;
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.95); border: 4px solid #fff; padding: 20px;
+            text-align: center; display: none; z-index: 200; width: 80%; max-width: 400px;
         }
         #btn-restart {
-            margin-top: 20px; padding: 15px; width: 100%;
-            background: #e74c3c; color: white; border: none; font-family: inherit;
+            margin-top: 20px; padding: 15px; width: 100%; background: #e74c3c;
+            color: white; border: none; font-family: inherit;
         }
 
     </style>
@@ -359,13 +345,13 @@
                     <div id="p2-math" class="math-box">WAITING...</div>
                 </div>
                 <div class="controls-row">
-                    <div class="btn btn-shoot" data-key="Enter">SHOOT</div>
                     <div class="dpad">
                         <div class="btn btn-up" data-key="ArrowUp">▲</div>
                         <div class="btn btn-left" data-key="ArrowLeft">◄</div>
                         <div class="btn btn-down" data-key="ArrowDown">▼</div>
                         <div class="btn btn-right" data-key="ArrowRight">►</div>
                     </div>
+                    <div class="btn btn-shoot" data-key="Enter">SHOOT</div>
                 </div>
             </div>
         </div>
@@ -457,8 +443,8 @@ const INITIAL_MAP = [
 ];
 
 const BASES = [
-    { id: 1, x: 9.5 * TILE_SIZE, y: 13.5 * TILE_SIZE, hp: 1, owner: 1, active: true },
-    { id: 2, x: 9.5 * TILE_SIZE, y: 1.5 * TILE_SIZE, hp: 1, owner: 2, active: true } 
+    { id: 1, x: 9.5 * TILE_SIZE, y: 13.5 * TILE_SIZE, hp: 5, owner: 1, active: true },
+    { id: 2, x: 9.5 * TILE_SIZE, y: 1.5 * TILE_SIZE, hp: 5, owner: 2, active: true } 
 ];
 
 class Tank {
@@ -582,6 +568,7 @@ class Bullet {
             if (Math.hypot(this.x - base.x, this.y - base.y) < 20) {
                 this.active = false; base.hp--; createExplosion(base.x, base.y, "yellow");
                 playSound('damage');
+                createFloatingText(base.x - 10, base.y - 10, "-1 HP", "#f1c40f");
                 if (base.hp <= 0) {
                     base.active = false; createExplosion(base.x, base.y, "red", 50);
                     let winnerName = (base.owner === 1) ? "Player 2" : "Player 1";
@@ -632,7 +619,6 @@ function spawnMathItems(values, correctVal) {
             let x = c * TILE_SIZE + 2, y = r * TILE_SIZE + 2;
             if (Math.hypot(x-p1.x, y-p1.y) < 60 || Math.hypot(x-p2.x, y-p2.y) < 60) { attempts++; continue; }
             
-            // Randomly assign orientation (0 or 180 degrees) for fair play
             let rotation = Math.random() > 0.5 ? Math.PI : 0;
             items.push({x, y, val, isCorrect: val === correctVal, creationTime: Date.now(), rotation: rotation});
             placed = true;
@@ -670,7 +656,7 @@ function updateUI() {
     let mathText = "WAITING...";
     let styleColor = "#95a5a6";
     if (mathProblem) {
-        mathText = `${mathProblem.text}<br><span style="font-size:0.7em">(${Math.ceil(mathTimer / 60)}s)</span>`;
+        mathText = `${mathProblem.text} <span style="font-size:0.7em">(${Math.ceil(mathTimer / 60)}s)</span>`;
         styleColor = "#f1c40f";
     }
     const p1Math = document.getElementById('p1-math');
@@ -705,19 +691,28 @@ function gameLoop() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     drawMap();
     items.forEach(item => {
-        // Draw the item box
         ctx.fillStyle = "#9b59b6"; ctx.fillRect(item.x, item.y, 36, 36);
         ctx.strokeStyle = "#fff"; ctx.strokeRect(item.x, item.y, 36, 36);
         
-        // Draw the number text (Rotated based on item.rotation)
         ctx.save();
-        ctx.translate(item.x + 18, item.y + 18); // Translate to center of box
-        ctx.rotate(item.rotation); // Rotate (0 or 180 deg)
+        ctx.translate(item.x + 18, item.y + 18);
+        ctx.rotate(item.rotation);
         ctx.fillStyle = "#fff"; 
         ctx.font = "bold 16px sans-serif"; 
         ctx.textAlign = "center"; 
         ctx.textBaseline = "middle";
         ctx.fillText(item.val, 0, 0);
+
+        // UNDERLINE LOGIC: Draw line if value is 6 or 9
+        if (item.val === 6 || item.val === 9) {
+            ctx.beginPath();
+            ctx.strokeStyle = "#fff";
+            ctx.lineWidth = 2;
+            ctx.moveTo(-6, 8); // Start slightly left of center, below text
+            ctx.lineTo(6, 8);  // End slightly right of center
+            ctx.stroke();
+        }
+
         ctx.restore();
     });
     BASES.forEach(b => { if(!b.active) { ctx.fillStyle = "#555"; ctx.fillRect(b.x-15, b.y-15, 30, 30); } });
@@ -788,7 +783,7 @@ function initGame() {
     p1 = new Tank(1, 165, 525, "#2ecc71", {up: "KeyW", down: "KeyS", left: "KeyA", right: "KeyD", shoot: "Space"});
     p2 = new Tank(2, 605, 45, "#3498db", {up: "ArrowUp", down: "ArrowDown", left: "ArrowLeft", right: "ArrowRight", shoot: "Enter"});
     
-    BASES.forEach(b => { b.hp = 1; b.active = true; });
+    BASES.forEach(b => { b.hp = 5; b.active = true; });
     bullets = []; items = []; particles = []; floatingTexts = [];
     gameOver = false;
     mathTimer = 0; 
