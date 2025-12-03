@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Math Tank Battle - Custom Layouts</title>
+    <title>Math Tank Battle - Layout Update</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
 
@@ -39,47 +39,56 @@
             gap: 20px;
         }
         
-        #start-screen h1 { color: #f1c40f; text-align: center; font-size: 1.5rem; margin-bottom: 20px; line-height: 1.5; }
+        #start-screen h1 {
+            color: #f1c40f;
+            text-align: center;
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
 
         .mode-btn {
-            background: #34495e; color: white; border: 2px solid #7f8c8d;
-            padding: 15px 20px; font-family: inherit; font-size: 0.9rem;
-            width: 80%; max-width: 300px; cursor: pointer; text-align: center;
+            background: #34495e;
+            color: white;
+            border: 2px solid #7f8c8d;
+            padding: 15px 20px;
+            font-family: inherit;
+            font-size: 0.9rem;
+            width: 80%;
+            max-width: 300px;
+            cursor: pointer;
+            text-align: center;
             touch-action: manipulation; 
         }
         .mode-btn:active { background: #2ecc71; border-color: #27ae60; }
 
-        /* --- MAIN LAYOUT STRUCTURE --- */
+        /* --- GAME CONTAINER --- */
         #game-container {
             display: none;
-            width: 100%; height: 100%;
+            width: 100%;
+            height: 100%;
             position: relative;
         }
 
-        /* The 5 Key Areas */
-        #p2-controls-area, #p1-controls-area {
-            z-index: 20;
+        /* --- GENERIC ZONES --- */
+        .player-zone {
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
-            pointer-events: none; /* Default pass-through, buttons enable pointer */
-        }
-
-        #p2-status-area, #p1-status-area {
-            z-index: 15;
+            padding: 5px; /* Reduced padding */
+            z-index: 10;
+            gap: 5px;
             background: #34495e;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.6rem;
         }
-
+        
         #game-wrapper {
             background: #000;
-            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
             overflow: hidden;
-            display: flex; justify-content: center; align-items: center;
-            z-index: 1;
+            position: relative;
         }
 
         canvas {
@@ -87,32 +96,51 @@
             border: 2px solid #7f8c8d;
             image-rendering: pixelated;
             box-shadow: 0 0 20px rgba(0,0,0,0.5);
-            max-width: 100%; max-height: 100%;
+            max-width: 100%;
+            max-height: 100%;
             object-fit: contain;
         }
 
-        /* --- UI COMPONENTS --- */
+        /* --- CONTROLS UI ELEMENTS --- */
+        .info-stack {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+            width: 100%;
+            margin-bottom: 5px;
+        }
+
         .player-info {
-            padding: 5px;
+            font-size: 0.6rem;
+            padding: 4px;
+            border: 1px solid white;
+            background: rgba(0,0,0,0.3);
+            text-align: center;
             white-space: nowrap;
         }
-        .p1-color { color: #2ecc71; }
-        .p2-color { color: #3498db; }
 
         .math-box {
             background: #000;
             border: 2px solid #f1c40f;
             color: #f1c40f;
-            padding: 5px 10px;
-            margin: 0 10px;
+            padding: 5px;
+            font-size: 0.6rem;
+            text-align: center;
+            min-height: 30px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
             border-radius: 4px;
             white-space: nowrap;
         }
 
-        /* --- CONTROLS --- */
-        .control-group {
-            pointer-events: auto;
+        .controls-row {
             display: flex;
+            flex-direction: row;
+            align-items: center;
+            width: 100%;
+            justify-content: center; /* Default center, overridden in modes */
             gap: 15px;
         }
 
@@ -124,12 +152,15 @@
         }
 
         .btn {
-            background: rgba(255, 255, 255, 0.15);
+            background: rgba(255, 255, 255, 0.1);
             border: 2px solid rgba(255, 255, 255, 0.3);
             border-radius: 6px;
             color: white;
-            display: flex; justify-content: center; align-items: center;
-            font-size: 1rem; cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1rem;
+            cursor: pointer;
         }
         .btn:active, .btn.pressed { background: rgba(255, 255, 255, 0.4); }
 
@@ -139,178 +170,122 @@
         .btn-right { grid-column: 3; grid-row: 2; }
 
         .btn-shoot {
-            width: 70px; height: 70px;
+            width: 70px;
+            height: 70px;
             border-radius: 50%;
-            background: rgba(231, 76, 60, 0.7);
-            border: 2px solid #c0392b;
+            background: #e74c3c;
+            border-color: #c0392b;
             font-size: 0.7rem;
-            display: flex; justify-content: center; align-items: center; text-align: center;
-            cursor: pointer; pointer-events: auto;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            cursor: pointer;
         }
         .btn-shoot:active, .btn-shoot.pressed { background: #ff6b6b; }
 
 
-        /* =========================================================
-           MODE 1: LANDSCAPE
-           D-pad on bottom corners. Shoot button ABOVE D-pad.
-           ========================================================= */
-        body.mode-landscape #game-container {
-            display: flex; 
-            flex-direction: row;
-        }
-
-        /* Sidebar Containers */
-        body.mode-landscape #p1-controls-area,
-        body.mode-landscape #p2-controls-area {
-            width: 180px; 
-            height: 100%;
-            background: #34495e;
-            flex-direction: column;
-            justify-content: flex-end; /* Align to bottom */
-            padding-bottom: 20px;
-        }
-        
-        body.mode-landscape #p1-controls-area { order: 1; border-right: 4px solid #2ecc71; }
-        body.mode-landscape #game-wrapper { order: 2; flex: 1; }
-        body.mode-landscape #p2-controls-area { order: 3; border-left: 4px solid #3498db; }
-
-        /* Hide separate status areas in landscape, inject into controls area via JS or CSS */
-        body.mode-landscape #p1-status-area,
-        body.mode-landscape #p2-status-area {
-            display: none; /* We will display status inside the control sidebars */
-        }
-
-        /* Control Group Layout: Vertical Stack */
-        body.mode-landscape .control-group {
-            flex-direction: column; /* Stack vertically */
-            align-items: center;
-        }
-        /* Order: Shoot Above, Dpad Below */
-        body.mode-landscape .control-group .dpad { order: 2; }
-        body.mode-landscape .control-group .btn-shoot { order: 1; margin-bottom: 15px; }
+        /* --- MODE 1: LANDSCAPE --- */
+        body.mode-landscape #game-container { display: flex; flex-direction: row; }
+        body.mode-landscape #p1-zone { width: 200px; border-right: 4px solid #2ecc71; order: 1; }
+        body.mode-landscape #game-wrapper { flex: 1; order: 2; }
+        body.mode-landscape #p2-zone { width: 200px; border-left: 4px solid #3498db; order: 3; }
+        #p1-zone .player-info { color: #2ecc71; border-color: #2ecc71; }
+        #p2-zone .player-info { color: #3498db; border-color: #3498db; }
 
 
-        /* =========================================================
-           MODE 2: PORTRAIT 1 (Head-to-Head)
-           P2 Controls (Top) -> P2 Status -> Map -> P1 Status -> P1 Controls (Bottom)
-           ========================================================= */
+        /* --- MODE 2: PORTRAIT 1 (Opposite / Head-to-Head) --- */
         body.mode-portrait-1 #game-container {
             display: flex;
             flex-direction: column;
         }
-
-        /* 1. P2 Controls (Top, Rotated) */
-        body.mode-portrait-1 #p2-controls-area {
-            order: 1;
-            height: 140px; 
-            background: #2c3e50;
-            transform: rotate(180deg);
-            padding: 10px;
-            align-items: flex-start; /* Because rotated, this is visually bottom of that div */
-        }
-        /* P2 Controls Layout */
-        body.mode-portrait-1 #p2-controls-area .control-group {
-            width: 100%;
-            justify-content: space-between;
-            flex-direction: row-reverse; /* Swap Left/Right logic for head-to-head */
-        }
-        /* Fix P2 D-Pad Directions (Upside down mappings) */
-        body.mode-portrait-1 #p2-controls-area .btn-up { grid-row: 3; }   
-        body.mode-portrait-1 #p2-controls-area .btn-down { grid-row: 1; } 
-        body.mode-portrait-1 #p2-controls-area .btn-left { grid-column: 3; }
-        body.mode-portrait-1 #p2-controls-area .btn-right { grid-column: 1; }
-
-
-        /* 2. P2 Status (Just above Map) */
-        body.mode-portrait-1 #p2-status-area {
-            order: 2;
-            height: 40px;
-            border-bottom: 4px solid #3498db;
-            transform: rotate(180deg);
-            width: 100%;
-        }
-
-        /* 3. Map (Center) */
-        body.mode-portrait-1 #game-wrapper {
-            order: 3;
-            flex: 1;
-        }
-
-        /* 4. P1 Status (Just below Map) */
-        body.mode-portrait-1 #p1-status-area {
-            order: 4;
-            height: 40px;
-            border-top: 4px solid #2ecc71;
-            width: 100%;
-        }
-
-        /* 5. P1 Controls (Bottom) */
-        body.mode-portrait-1 #p1-controls-area {
-            order: 5;
-            height: 140px;
-            background: #2c3e50;
-            padding: 10px;
-            align-items: flex-end;
-        }
-        body.mode-portrait-1 #p1-controls-area .control-group {
-            width: 100%;
-            justify-content: space-between;
-        }
-
-
-        /* =========================================================
-           MODE 3: PORTRAIT 2 (Overlay / Same Side)
-           Map (Top) -> Status Bar (Bottom)
-           Controls Overlay Top Corners
-           ========================================================= */
-        body.mode-portrait-2 #game-container {
-            display: flex;
-            flex-direction: column;
-        }
-
-        /* Map takes remaining space */
-        body.mode-portrait-2 #game-wrapper {
-            order: 1;
-            flex: 1;
-            width: 100%;
-        }
-
-        /* Status Bar at Bottom */
-        body.mode-portrait-2 #p1-status-area, 
-        body.mode-portrait-2 #p2-status-area {
-            /* We will merge these visually into one bar using a wrapper or CSS order */
-            order: 2;
-            height: 50px;
-            width: 50%;
-            display: inline-flex;
-            border-top: 2px solid #fff;
-        }
-        body.mode-portrait-2 #p1-status-area { border-right: 1px solid #7f8c8d; }
-
-        /* Controls: Absolute Overlay */
-        body.mode-portrait-2 #p1-controls-area, 
-        body.mode-portrait-2 #p2-controls-area {
-            position: absolute;
-            top: 0;
-            height: 0; /* Don't block clicks */
-            width: auto;
-            overflow: visible;
-        }
-
-        body.mode-portrait-2 #p1-controls-area { left: 10px; top: 10px; }
-        body.mode-portrait-2 #p2-controls-area { right: 10px; top: 10px; }
-
-        body.mode-portrait-2 .control-group {
-            flex-direction: column-reverse; /* Shoot below Dpad */
-            gap: 10px;
-        }
         
-        /* High Transparency for Overlay */
-        body.mode-portrait-2 .btn, 
-        body.mode-portrait-2 .btn-shoot {
-            background: rgba(0, 0, 0, 0.15);
-            border-color: rgba(255, 255, 255, 0.2);
+        body.mode-portrait-1 .player-zone {
+            flex: none;
+            height: 160px; /* Reduced height to maximize map */
+            width: 100%;
+            justify-content: flex-start;
+            padding: 5px 15px; /* Add side padding */
         }
+
+        /* Rotate P2 */
+        body.mode-portrait-1 #p2-zone {
+            order: 1;
+            background: #2c3e50;
+            border-bottom: 4px solid #3498db;
+        }
+        body.mode-portrait-1 #p2-inner {
+            transform: rotate(180deg); 
+            width: 100%;
+        }
+
+        /* P1 Zone */
+        body.mode-portrait-1 #p1-zone {
+            order: 3;
+            background: #2c3e50;
+            border-top: 4px solid #2ecc71;
+        }
+        body.mode-portrait-1 #p1-inner {
+            width: 100%;
+        }
+
+        /* Layout Changes for Portrait 1: Single Row Info */
+        body.mode-portrait-1 .info-stack {
+            flex-direction: row;
+            justify-content: space-between;
+            width: 100%;
+        }
+        body.mode-portrait-1 .player-info { flex: 1; margin-right: 10px; }
+        body.mode-portrait-1 .math-box { flex: 1; }
+
+        /* Layout Changes for Portrait 1: Corner Controls */
+        body.mode-portrait-1 .controls-row {
+            justify-content: space-between; /* Push items to edges */
+            width: 100%;
+            margin-top: 5px;
+        }
+
+        /* Fix P2 Controls Logic (Swapped grid) */
+        body.mode-portrait-1 #p2-zone .btn-up { grid-row: 3; }   
+        body.mode-portrait-1 #p2-zone .btn-down { grid-row: 1; } 
+        body.mode-portrait-1 #p2-zone .btn-left { grid-column: 3; }
+        body.mode-portrait-1 #p2-zone .btn-right { grid-column: 1; }
+
+        body.mode-portrait-1 #game-wrapper {
+            order: 2;
+            flex: 1;
+        }
+
+
+        /* --- MODE 3: PORTRAIT 2 (Overlay / Transparent) --- */
+        body.mode-portrait-2 #game-container { display: block; }
+        body.mode-portrait-2 #game-wrapper {
+            width: 100%; height: 100%; position: absolute; top: 0; left: 0; z-index: 1;
+        }
+        body.mode-portrait-2 .player-zone {
+            position: absolute; top: 10px; background: transparent; z-index: 20; padding: 0; width: auto;
+        }
+        body.mode-portrait-2 #p1-zone { left: 10px; align-items: flex-start; }
+        body.mode-portrait-2 #p2-zone { right: 10px; align-items: flex-end; }
+        
+        /* High Transparency for Viewability */
+        body.mode-portrait-2 .btn, 
+        body.mode-portrait-2 .btn-shoot, 
+        body.mode-portrait-2 .player-info,
+        body.mode-portrait-2 .math-box {
+            background: rgba(0, 0, 0, 0.15); /* Much more transparent */
+            backdrop-filter: none;
+            border-color: rgba(255,255,255,0.2);
+            color: rgba(255,255,255,0.8);
+        }
+        body.mode-portrait-2 .math-box {
+            min-height: 40px; font-size: 0.6rem; margin-bottom: 5px;
+        }
+        body.mode-portrait-2 .controls-row {
+            flex-direction: column-reverse; gap: 10px;
+        }
+        body.mode-portrait-2 #p1-zone .controls-row { align-items: flex-start; }
+        body.mode-portrait-2 #p2-zone .controls-row { align-items: flex-end; }
 
         /* Modal styling */
         #game-over-modal {
@@ -323,9 +298,6 @@
             color: white; border: none; font-family: inherit;
         }
 
-        /* Helper to hide specific elements in modes */
-        .hidden-in-landscape { display: none; }
-
     </style>
 </head>
 <body>
@@ -334,30 +306,27 @@
         <h1>MATH TANK BATTLE<br>PvP</h1>
         <button class="mode-btn" onclick="startGame('landscape')">LANDSCAPE MODE<br>(Side by Side)</button>
         <button class="mode-btn" onclick="startGame('portrait-1')">PORTRAIT MODE 1<br>(Opposite / Head-to-Head)</button>
-        <button class="mode-btn" onclick="startGame('portrait-2')">PORTRAIT MODE 2<br>(Overlay / Same Side)</button>
+        <button class="mode-btn" onclick="startGame('portrait-2')">PORTRAIT MODE 2<br>(Overlay / Top Controls)</button>
     </div>
 
     <div id="game-container">
-
-        <div id="p2-controls-area">
-            <div class="control-group">
-                <div class="dpad">
-                    <div class="btn btn-up" data-key="ArrowUp">▲</div>
-                    <div class="btn btn-left" data-key="ArrowLeft">◄</div>
-                    <div class="btn btn-down" data-key="ArrowDown">▼</div>
-                    <div class="btn btn-right" data-key="ArrowRight">►</div>
+        
+        <div id="p1-zone" class="player-zone">
+            <div id="p1-inner"> 
+                <div class="info-stack">
+                    <div class="player-info" id="p1-stats">P1 HP: 5 | AMMO: 0</div>
+                    <div id="p1-math" class="math-box">WAITING...</div>
                 </div>
-                <div class="btn btn-shoot" data-key="Enter">SHOOT</div>
+                <div class="controls-row">
+                    <div class="dpad">
+                        <div class="btn btn-up" data-key="KeyW">W</div>
+                        <div class="btn btn-left" data-key="KeyA">A</div>
+                        <div class="btn btn-down" data-key="KeyS">S</div>
+                        <div class="btn btn-right" data-key="KeyD">D</div>
+                    </div>
+                    <div class="btn btn-shoot" data-key="Space">SHOOT</div>
+                </div>
             </div>
-            <div class="landscape-info" style="display:none; margin-bottom:20px; text-align:center;">
-                <div class="player-info p2-color">P2 HP: 5</div>
-                <div class="math-box p2-math-display" style="margin-top:5px; font-size:0.6rem;">WAITING</div>
-            </div>
-        </div>
-
-        <div id="p2-status-area">
-            <div class="player-info p2-color" id="p2-stats-text">P2 HP: 5</div>
-            <div class="math-box p2-math-display">WAITING...</div>
         </div>
 
         <div id="game-wrapper">
@@ -369,24 +338,21 @@
             </div>
         </div>
 
-        <div id="p1-status-area">
-            <div class="player-info p1-color" id="p1-stats-text">P1 HP: 5</div>
-            <div class="math-box p1-math-display">WAITING...</div>
-        </div>
-
-        <div id="p1-controls-area">
-            <div class="control-group">
-                <div class="dpad">
-                    <div class="btn btn-up" data-key="KeyW">W</div>
-                    <div class="btn btn-left" data-key="KeyA">A</div>
-                    <div class="btn btn-down" data-key="KeyS">S</div>
-                    <div class="btn btn-right" data-key="KeyD">D</div>
+        <div id="p2-zone" class="player-zone">
+            <div id="p2-inner"> 
+                <div class="info-stack">
+                    <div class="player-info" id="p2-stats">P2 HP: 5 | AMMO: 0</div>
+                    <div id="p2-math" class="math-box">WAITING...</div>
                 </div>
-                <div class="btn btn-shoot" data-key="Space">SHOOT</div>
-            </div>
-            <div class="landscape-info" style="display:none; margin-bottom:20px; text-align:center;">
-                <div class="player-info p1-color">P1 HP: 5</div>
-                <div class="math-box p1-math-display" style="margin-top:5px; font-size:0.6rem;">WAITING</div>
+                <div class="controls-row">
+                    <div class="dpad">
+                        <div class="btn btn-up" data-key="ArrowUp">▲</div>
+                        <div class="btn btn-left" data-key="ArrowLeft">◄</div>
+                        <div class="btn btn-down" data-key="ArrowDown">▼</div>
+                        <div class="btn btn-right" data-key="ArrowRight">►</div>
+                    </div>
+                    <div class="btn btn-shoot" data-key="Enter">SHOOT</div>
+                </div>
             </div>
         </div>
 
@@ -401,13 +367,20 @@ const TILE_SIZE = 40;
 const MAP_ROWS = 15; 
 const MAP_COLS = 20; 
 
+// Input State
 const keys = {};
+
+// Audio
 const AudioContext = window.AudioContext || window.webkitAudioContext;
 let audioCtx = null;
 
 function initAudio() {
-    if (!audioCtx) { audioCtx = new AudioContext(); }
-    if (audioCtx.state === 'suspended') { audioCtx.resume(); }
+    if (!audioCtx) {
+        audioCtx = new AudioContext();
+    }
+    if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+    }
 }
 
 function playSound(type) {
@@ -646,12 +619,7 @@ function spawnMathItems(values, correctVal) {
             let x = c * TILE_SIZE + 2, y = r * TILE_SIZE + 2;
             if (Math.hypot(x-p1.x, y-p1.y) < 60 || Math.hypot(x-p2.x, y-p2.y) < 60) { attempts++; continue; }
             
-            // Only rotate for Portrait 1 (Head to Head)
-            let rotation = 0;
-            if (document.body.classList.contains('mode-portrait-1')) {
-                rotation = Math.random() > 0.5 ? Math.PI : 0;
-            }
-
+            let rotation = Math.random() > 0.5 ? Math.PI : 0;
             items.push({x, y, val, isCorrect: val === correctVal, creationTime: Date.now(), rotation: rotation});
             placed = true;
         }
@@ -682,29 +650,19 @@ function endGame(winner, reason) {
 }
 
 function updateUI() {
-    document.getElementById('p1-stats-text').innerText = `P1 HP: ${p1.hp} | AMMO: ${p1.ammo}`;
-    document.getElementById('p2-stats-text').innerText = `P2 HP: ${p2.hp} | AMMO: ${p2.ammo}`;
+    document.getElementById('p1-stats').innerText = `P1 HP: ${p1.hp} | AMMO: ${p1.ammo}`;
+    document.getElementById('p2-stats').innerText = `P2 HP: ${p2.hp} | AMMO: ${p2.ammo}`;
     
-    // For Landscape stats (hidden inside controls but let's update them)
-    const lsP1 = document.querySelector('.landscape-info .p1-color');
-    const lsP2 = document.querySelector('.landscape-info .p2-color');
-    if(lsP1) lsP1.innerText = `P1 HP: ${p1.hp} | AMMO: ${p1.ammo}`;
-    if(lsP2) lsP2.innerText = `P2 HP: ${p2.hp} | AMMO: ${p2.ammo}`;
-
     let mathText = "WAITING...";
     let styleColor = "#95a5a6";
-    
     if (mathProblem) {
         mathText = `${mathProblem.text} <span style="font-size:0.7em">(${Math.ceil(mathTimer / 60)}s)</span>`;
         styleColor = "#f1c40f";
     }
-    
-    // Update main boxes
-    const mathDisplays = document.querySelectorAll('.math-box');
-    mathDisplays.forEach(el => {
-        el.innerHTML = mathText;
-        el.style.borderColor = styleColor;
-    });
+    const p1Math = document.getElementById('p1-math');
+    const p2Math = document.getElementById('p2-math');
+    p1Math.innerHTML = mathText; p2Math.innerHTML = mathText;
+    p1Math.style.borderColor = styleColor; p2Math.style.borderColor = styleColor;
 }
 
 function drawMap() {
@@ -745,9 +703,14 @@ function gameLoop() {
         ctx.textBaseline = "middle";
         ctx.fillText(item.val, 0, 0);
 
+        // UNDERLINE LOGIC: Draw line if value is 6 or 9
         if (item.val === 6 || item.val === 9) {
-            ctx.beginPath(); ctx.strokeStyle = "#fff"; ctx.lineWidth = 2;
-            ctx.moveTo(-6, 8); ctx.lineTo(6, 8); ctx.stroke();
+            ctx.beginPath();
+            ctx.strokeStyle = "#fff";
+            ctx.lineWidth = 2;
+            ctx.moveTo(-6, 8); // Start slightly left of center, below text
+            ctx.lineTo(6, 8);  // End slightly right of center
+            ctx.stroke();
         }
 
         ctx.restore();
@@ -770,33 +733,7 @@ function gameLoop() {
 function startGame(mode) {
     initAudio();
     document.getElementById('start-screen').style.display = 'none';
-    document.getElementById('game-container').style.display = 'flex';
     document.body.className = 'mode-' + mode;
-    
-    // Toggle Extra Landscape Info
-    const extraInfos = document.querySelectorAll('.landscape-info');
-    extraInfos.forEach(el => el.style.display = (mode === 'landscape') ? 'block' : 'none');
-    
-    // Handle Shared/Individual Math display
-    const sharedMath = document.getElementById('shared-math-display');
-    const p1Math = document.querySelector('#p1-status-area .math-box');
-    const p2Math = document.querySelector('#p2-status-area .math-box');
-
-    if(mode === 'portrait-2') {
-         // Shared on
-         sharedMath.style.display = 'flex';
-         p1Math.style.display = 'none';
-         p2Math.style.display = 'none';
-    } else if (mode === 'landscape') {
-        // Landscape uses status inside controls, hide top/bottom bars via CSS but ensure JS logic updates them
-         sharedMath.style.display = 'none';
-    } else {
-        // Portrait 1
-         sharedMath.style.display = 'none';
-         p1Math.style.display = 'flex';
-         p2Math.style.display = 'flex';
-    }
-
     initGame();
 }
 
