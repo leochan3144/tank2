@@ -254,6 +254,8 @@
         body.mode-portrait-1 #game-wrapper {
             order: 2;
             flex: 1;
+            z-index: 1; /* Ensure it sits under UI if overlapping */
+    transform: translateY(-50px); /* Moves the battlefield 50px UP */
         }
 
 
