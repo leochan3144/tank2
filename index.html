@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Math Tank Battle - Layout Update</title>
+    <title>Math Tank Battle - PvP</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
 
@@ -76,7 +76,7 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            padding: 5px; /* Reduced padding */
+            padding: 5px;
             z-index: 10;
             gap: 5px;
             background: #34495e;
@@ -140,7 +140,7 @@
             flex-direction: row;
             align-items: center;
             width: 100%;
-            justify-content: center; /* Default center, overridden in modes */
+            justify-content: center;
             gap: 15px;
         }
 
@@ -202,10 +202,10 @@
         
         body.mode-portrait-1 .player-zone {
             flex: none;
-            height: 160px; /* Reduced height to maximize map */
+            height: 160px;
             width: 100%;
             justify-content: flex-start;
-            padding: 5px 15px; /* Add side padding */
+            padding: 5px 15px;
         }
 
         /* Rotate P2 */
@@ -240,7 +240,7 @@
 
         /* Layout Changes for Portrait 1: Corner Controls */
         body.mode-portrait-1 .controls-row {
-            justify-content: space-between; /* Push items to edges */
+            justify-content: space-between;
             width: 100%;
             margin-top: 5px;
         }
@@ -268,12 +268,11 @@
         body.mode-portrait-2 #p1-zone { left: 10px; align-items: flex-start; }
         body.mode-portrait-2 #p2-zone { right: 10px; align-items: flex-end; }
         
-        /* High Transparency for Viewability */
         body.mode-portrait-2 .btn, 
         body.mode-portrait-2 .btn-shoot, 
         body.mode-portrait-2 .player-info,
         body.mode-portrait-2 .math-box {
-            background: rgba(0, 0, 0, 0.15); /* Much more transparent */
+            background: rgba(0, 0, 0, 0.15);
             backdrop-filter: none;
             border-color: rgba(255,255,255,0.2);
             color: rgba(255,255,255,0.8);
@@ -599,32 +598,96 @@ function rectIntersect(r1, r2) {
 function createExplosion(x, y, color, count=10) { for(let i=0; i<count; i++) particles.push(new Particle(x, y, color)); }
 function createFloatingText(x, y, text, color) { floatingTexts.push({x, y, text, color, life: 1.0}); }
 
+/* --- UPDATED MATH LOGIC --- */
 function generateMathProblem() {
     let isAdd = Math.random() > 0.5;
     let a = Math.floor(Math.random() * 9) + 1; 
     let b = Math.floor(Math.random() * 9) + 1;
+    
+    // Ensure positive result for subtraction
     if (!isAdd && b > a) { let t = a; a = b; b = t; }
+    
     let ans = isAdd ? a + b : a - b;
-    spawnMathItems([ans, ans+Math.floor(Math.random()*5)+1, ans-Math.floor(Math.random()*4)-1].sort(() => Math.random()-0.5), ans);
+
+    // --- 2 Correct Answers, 4 Wrong Answers (6 Total) ---
+    let values = [];
+    
+    // 1. Add two correct answers
+    values.push(ans);
+    values.push(ans);
+
+    // 2. Add 4 wrong answers
+    let attempts = 0;
+    while (values.length < 6 && attempts < 100) {
+        // Generate a wrong number close to the answer (range -5 to +5)
+        let offset = Math.floor(Math.random() * 11) - 5; 
+        let wrong = ans + offset;
+        
+        // Ensure it's not the answer and not already in the list (to avoid duplicates)
+        if (wrong !== ans && !values.includes(wrong) && wrong >= 0) {
+            values.push(wrong);
+        }
+        attempts++;
+    }
+
+    // 3. Shuffle the array so the correct answers aren't always first
+    values.sort(() => Math.random() - 0.5);
+
+    spawnMathItems(values, ans);
     return { text: `${a} ${isAdd ? "+" : "-"} ${b} = ?`, answer: ans };
 }
 
 function spawnMathItems(values, correctVal) {
     items = [];
-    values.forEach(val => {
+    
+    // Check if we are in Head-to-Head mode
+    const isHeadToHead = document.body.classList.contains('mode-portrait-1');
+
+    values.forEach((val, index) => {
         let placed = false, attempts = 0;
         while (!placed && attempts < 50) {
             let c = Math.floor(Math.random() * MAP_COLS), r = Math.floor(Math.random() * MAP_ROWS);
+            
+            // Check walls
             if (INITIAL_MAP[r][c] !== 0) { attempts++; continue; }
+            
             let x = c * TILE_SIZE + 2, y = r * TILE_SIZE + 2;
+            
+            // Don't spawn too close to players
             if (Math.hypot(x-p1.x, y-p1.y) < 60 || Math.hypot(x-p2.x, y-p2.y) < 60) { attempts++; continue; }
             
-            let rotation = Math.random() > 0.5 ? Math.PI : 0;
-            items.push({x, y, val, isCorrect: val === correctVal, creationTime: Date.now(), rotation: rotation});
+            // Don't spawn on top of another item
+            let overlap = false;
+            for(let existing of items) {
+                 if (Math.hypot(x - existing.x, y - existing.y) < 40) overlap = true;
+            }
+            if(overlap) { attempts++; continue; }
+
+            // --- ROTATION LOGIC ---
+            let rotation = 0;
+
+            if (isHeadToHead) {
+                // In Head-to-Head, flip every second item (even/odd split)
+                // This ensures exactly half are upside down for the opposing player
+                rotation = (index % 2 !== 0) ? Math.PI : 0;
+            } else {
+                // In Landscape or Overlay mode, everything faces the same way (upright)
+                rotation = 0; 
+            }
+
+            items.push({
+                x, 
+                y, 
+                val, 
+                isCorrect: val === correctVal, 
+                creationTime: Date.now(), 
+                rotation: rotation
+            });
             placed = true;
         }
     });
 }
+/* --------------------------- */
 
 function updateMathLogic() {
     if (gameOver) return;
