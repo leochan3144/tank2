@@ -598,88 +598,80 @@ function rectIntersect(r1, r2) {
 function createExplosion(x, y, color, count=10) { for(let i=0; i<count; i++) particles.push(new Particle(x, y, color)); }
 function createFloatingText(x, y, text, color) { floatingTexts.push({x, y, text, color, life: 1.0}); }
 
-/* --- UPDATED MATH LOGIC --- */
+/* --- UPDATED MATH LOGIC: TWO SETS --- */
 function generateMathProblem() {
     let isAdd = Math.random() > 0.5;
     let a = Math.floor(Math.random() * 9) + 1; 
     let b = Math.floor(Math.random() * 9) + 1;
-    
-    // Ensure positive result for subtraction
     if (!isAdd && b > a) { let t = a; a = b; b = t; }
-    
     let ans = isAdd ? a + b : a - b;
 
-    // --- 2 Correct Answers, 4 Wrong Answers (6 Total) ---
-    let values = [];
-    
-    // 1. Add two correct answers
-    values.push(ans);
-    values.push(ans);
-
-    // 2. Add 4 wrong answers
-    let attempts = 0;
-    while (values.length < 6 && attempts < 100) {
-        // Generate a wrong number close to the answer (range -5 to +5)
-        let offset = Math.floor(Math.random() * 11) - 5; 
-        let wrong = ans + offset;
-        
-        // Ensure it's not the answer and not already in the list (to avoid duplicates)
-        if (wrong !== ans && !values.includes(wrong) && wrong >= 0) {
-            values.push(wrong);
+    // Helper to generate a unique wrong answer
+    const getWrong = (existing) => {
+        let w = -1;
+        while(w < 0 || w === ans || existing.includes(w)) {
+            w = ans + (Math.floor(Math.random() * 11) - 5);
         }
-        attempts++;
-    }
+        return w;
+    };
 
-    // 3. Shuffle the array so the correct answers aren't always first
-    values.sort(() => Math.random() - 0.5);
+    // --- SET 1 (for Upright/Player 1) ---
+    // Contains 1 Correct, 2 Wrong
+    let set1 = [ans];
+    set1.push(getWrong(set1));
+    set1.push(getWrong(set1));
 
-    spawnMathItems(values, ans);
+    // --- SET 2 (for Flipped/Player 2) ---
+    // Contains 1 Correct, 2 Wrong (try to keep wrongs unique from Set 1 for variety)
+    let set2 = [ans];
+    let allUsed = [...set1, ...set2];
+    set2.push(getWrong(allUsed));
+    allUsed.push(set2[1]);
+    set2.push(getWrong(allUsed));
+
+    // Combine and attach Metadata (group id)
+    let finalValues = [];
+    set1.forEach(v => finalValues.push({val: v, group: 1}));
+    set2.forEach(v => finalValues.push({val: v, group: 2}));
+
+    // Shuffle spatailly
+    finalValues.sort(() => Math.random() - 0.5);
+
+    spawnMathItems(finalValues, ans);
     return { text: `${a} ${isAdd ? "+" : "-"} ${b} = ?`, answer: ans };
 }
 
-function spawnMathItems(values, correctVal) {
+function spawnMathItems(valuesWithMeta, correctVal) {
     items = [];
     
     // Check if we are in Head-to-Head mode
     const isHeadToHead = document.body.classList.contains('mode-portrait-1');
 
-    values.forEach((val, index) => {
+    valuesWithMeta.forEach((itemData) => {
         let placed = false, attempts = 0;
         while (!placed && attempts < 50) {
             let c = Math.floor(Math.random() * MAP_COLS), r = Math.floor(Math.random() * MAP_ROWS);
-            
-            // Check walls
             if (INITIAL_MAP[r][c] !== 0) { attempts++; continue; }
-            
             let x = c * TILE_SIZE + 2, y = r * TILE_SIZE + 2;
             
-            // Don't spawn too close to players
             if (Math.hypot(x-p1.x, y-p1.y) < 60 || Math.hypot(x-p2.x, y-p2.y) < 60) { attempts++; continue; }
             
-            // Don't spawn on top of another item
             let overlap = false;
-            for(let existing of items) {
-                 if (Math.hypot(x - existing.x, y - existing.y) < 40) overlap = true;
-            }
+            for(let existing of items) { if (Math.hypot(x - existing.x, y - existing.y) < 40) overlap = true; }
             if(overlap) { attempts++; continue; }
 
             // --- ROTATION LOGIC ---
+            // In Head-to-Head: Group 2 (Set 2) is flipped 180 deg. Group 1 is upright.
+            // In other modes: All upright.
             let rotation = 0;
-
-            if (isHeadToHead) {
-                // In Head-to-Head, flip every second item (even/odd split)
-                // This ensures exactly half are upside down for the opposing player
-                rotation = (index % 2 !== 0) ? Math.PI : 0;
-            } else {
-                // In Landscape or Overlay mode, everything faces the same way (upright)
-                rotation = 0; 
+            if (isHeadToHead && itemData.group === 2) {
+                rotation = Math.PI;
             }
 
             items.push({
-                x, 
-                y, 
-                val, 
-                isCorrect: val === correctVal, 
+                x, y, 
+                val: itemData.val, 
+                isCorrect: itemData.val === correctVal, 
                 creationTime: Date.now(), 
                 rotation: rotation
             });
