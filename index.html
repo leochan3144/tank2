@@ -598,7 +598,7 @@ function rectIntersect(r1, r2) {
 function createExplosion(x, y, color, count=10) { for(let i=0; i<count; i++) particles.push(new Particle(x, y, color)); }
 function createFloatingText(x, y, text, color) { floatingTexts.push({x, y, text, color, life: 1.0}); }
 
-/* --- UPDATED MATH LOGIC: TWO SETS --- */
+/* --- UPDATED MATH LOGIC: IDENTICAL TWIN SETS --- */
 function generateMathProblem() {
     let isAdd = Math.random() > 0.5;
     let a = Math.floor(Math.random() * 9) + 1; 
@@ -615,26 +615,23 @@ function generateMathProblem() {
         return w;
     };
 
-    // --- SET 1 (for Upright/Player 1) ---
+    // --- BASE SET ---
     // Contains 1 Correct, 2 Wrong
-    let set1 = [ans];
-    set1.push(getWrong(set1));
-    set1.push(getWrong(set1));
+    let baseSet = [ans];
+    baseSet.push(getWrong(baseSet));
+    baseSet.push(getWrong(baseSet));
+
+    let finalValues = [];
+
+    // --- SET 1 (for Upright/Player 1) ---
+    // Take values from baseSet
+    baseSet.forEach(v => finalValues.push({val: v, group: 1}));
 
     // --- SET 2 (for Flipped/Player 2) ---
-    // Contains 1 Correct, 2 Wrong (try to keep wrongs unique from Set 1 for variety)
-    let set2 = [ans];
-    let allUsed = [...set1, ...set2];
-    set2.push(getWrong(allUsed));
-    allUsed.push(set2[1]);
-    set2.push(getWrong(allUsed));
+    // Take EXACT SAME values from baseSet
+    baseSet.forEach(v => finalValues.push({val: v, group: 2}));
 
-    // Combine and attach Metadata (group id)
-    let finalValues = [];
-    set1.forEach(v => finalValues.push({val: v, group: 1}));
-    set2.forEach(v => finalValues.push({val: v, group: 2}));
-
-    // Shuffle spatailly
+    // Shuffle spatially
     finalValues.sort(() => Math.random() - 0.5);
 
     spawnMathItems(finalValues, ans);
