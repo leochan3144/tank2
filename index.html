@@ -189,9 +189,10 @@
 
         /* --- MODE 1: LANDSCAPE --- */
         body.mode-landscape #game-container { display: flex; flex-direction: row; }
-        body.mode-landscape #p1-zone { width: 200px; border-right: 4px solid #2ecc71; order: 1; }
+        /* REMOVED GREEN AND BLUE LINES */
+        body.mode-landscape #p1-zone { width: 200px; border-right: none; order: 1; } 
         body.mode-landscape #game-wrapper { flex: 1; order: 2; }
-        body.mode-landscape #p2-zone { width: 200px; border-left: 4px solid #3498db; order: 3; }
+        body.mode-landscape #p2-zone { width: 200px; border-left: none; order: 3; } 
         #p1-zone .player-info { color: #2ecc71; border-color: #2ecc71; }
         #p2-zone .player-info { color: #3498db; border-color: #3498db; }
 
@@ -240,10 +241,9 @@
         
         /* SHIFT INFO STACKS FOR PORTRAIT 1 (P1: 65px Up, P2: 75px Down) */
         body.mode-portrait-1 #p1-zone .info-stack {
-            transform: translateY(-65px); /* KEPT at 65px Up */
+            transform: translateY(-65px); 
         }
         body.mode-portrait-1 #p2-zone .info-stack {
-            /* P2 is rotated 180deg. Local "-75px" (Up) = Screen "+75px" (Down). */
             transform: translateY(-75px); 
         }
 
@@ -457,7 +457,7 @@ let animationFrameId = null;
 
 // Map Config
 const INITIAL_MAP = [
-    [0,0,0,0,0,0,0,0,2,1,1,0,0,0,0,0,0,0,0,0], 
+    [0,0,0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,0,0,0], 
     [0,0,0,0,0,0,0,0,2,9,2,0,0,0,0,0,0,0,0,0], 
     [0,0,1,1,1,0,0,0,2,2,2,0,0,0,1,1,1,0,0,0], 
     [0,0,1,0,1,0,0,0,0,0,0,0,0,0,1,0,1,0,0,0],
@@ -471,7 +471,7 @@ const INITIAL_MAP = [
     [0,0,1,0,1,0,0,0,0,0,0,0,0,0,1,0,1,0,0,0],
     [0,0,1,1,1,0,0,0,2,2,2,0,0,0,1,1,1,0,0,0], 
     [0,0,0,0,0,0,0,0,2,9,2,0,0,0,0,0,0,0,0,0], 
-    [0,0,0,0,0,0,0,0,1,1,2,0,0,0,0,0,0,0,0,0]  
+    [0,0,0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,0,0,0]  
 ];
 
 const BASES = [
