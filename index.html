@@ -189,10 +189,9 @@
 
         /* --- MODE 1: LANDSCAPE --- */
         body.mode-landscape #game-container { display: flex; flex-direction: row; }
-        /* REMOVED GREEN AND BLUE LINES */
-        body.mode-landscape #p1-zone { width: 200px; border-right: none; order: 1; } 
+        body.mode-landscape #p1-zone { width: 200px; /* REMOVED border-right */ order: 1; }
         body.mode-landscape #game-wrapper { flex: 1; order: 2; }
-        body.mode-landscape #p2-zone { width: 200px; border-left: none; order: 3; } 
+        body.mode-landscape #p2-zone { width: 200px; /* REMOVED border-left */ order: 3; }
         #p1-zone .player-info { color: #2ecc71; border-color: #2ecc71; }
         #p2-zone .player-info { color: #3498db; border-color: #3498db; }
 
@@ -241,9 +240,10 @@
         
         /* SHIFT INFO STACKS FOR PORTRAIT 1 (P1: 65px Up, P2: 75px Down) */
         body.mode-portrait-1 #p1-zone .info-stack {
-            transform: translateY(-65px); 
+            transform: translateY(-65px); /* KEPT at 65px Up */
         }
         body.mode-portrait-1 #p2-zone .info-stack {
+            /* P2 is rotated 180deg. Local "-75px" (Up) = Screen "+75px" (Down). */
             transform: translateY(-75px); 
         }
 
