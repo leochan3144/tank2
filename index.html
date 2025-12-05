@@ -475,8 +475,8 @@ const INITIAL_MAP = [
 ];
 
 const BASES = [
-    { id: 1, x: 9.5 * TILE_SIZE, y: 13.5 * TILE_SIZE, hp: 1, owner: 1, active: true },
-    { id: 2, x: 9.5 * TILE_SIZE, y: 1.5 * TILE_SIZE, hp: 1, owner: 2, active: true } 
+    { id: 1, x: 9.5 * TILE_SIZE, y: 13.5 * TILE_SIZE, hp: 5, owner: 1, active: true },
+    { id: 2, x: 9.5 * TILE_SIZE, y: 1.5 * TILE_SIZE, hp: 5, owner: 2, active: true } 
 ];
 
 class Tank {
@@ -610,8 +610,9 @@ class Bullet {
             }
         }
         let target = this.ownerId === 1 ? p2 : p1;
-        if (target.hp > 0 && this.x > target.x && this.x < target.x + target.width && this.y > target.y && this.y < target.y + target.height) {
+        if (target.hp > 0 && target.invulnerable <= 0 && this.x > target.x && this.x < target.x + target.width && this.y > target.y && this.y < target.y + target.height) {
             this.active = false; target.hp--; 
+            target.invulnerable = 30; // Brief tank invulnerability after being shot
             playSound('damage');
             createExplosion(this.x, this.y, "red"); checkWinCondition();
         }
@@ -634,16 +635,33 @@ function createFloatingText(x, y, text, color) { floatingTexts.push({x, y, text,
 /* --- UPDATED MATH LOGIC: IDENTICAL TWIN SETS --- */
 function generateMathProblem() {
     let isAdd = Math.random() > 0.5;
-    let a = Math.floor(Math.random() * 9) + 1; 
-    let b = Math.floor(Math.random() * 9) + 1;
-    if (!isAdd && b > a) { let t = a; a = b; b = t; }
-    let ans = isAdd ? a + b : a - b;
+    let a, b, ans;
+
+    if (isAdd) {
+        // --- ADDITION LOGIC: a + b <= 10, a >= 0, b >= 0 ---
+        a = Math.floor(Math.random() * 10); // a is 0 to 9
+        b = Math.floor(Math.random() * (10 - a + 1)); // b is 0 to (10 - a)
+        ans = a + b;
+    } else {
+        // --- SUBTRACTION LOGIC: 0 < b < a < 11 (max a is 10, min b is 1) ---
+        a = Math.floor(Math.random() * 9) + 2; // a is 2 to 10
+        b = Math.floor(Math.random() * (a - 1)) + 1; // b is 1 to a-1
+        ans = a - b;
+    }
 
     // Helper to generate a unique wrong answer
     const getWrong = (existing) => {
         let w = -1;
+        // Keep generating until w is non-negative AND unique
         while(w < 0 || w === ans || existing.includes(w)) {
-            w = ans + (Math.floor(Math.random() * 11) - 5);
+            // Generate a wrong answer close to the correct one (ans +/- 1 to 5)
+            let diff = Math.floor(Math.random() * 5) + 1; // 1 to 5
+            if (Math.random() < 0.5) diff *= -1; // +/-
+
+            w = ans + diff;
+            
+            // Re-check for bounds and uniqueness
+            if (w < 0 || w === ans) continue; 
         }
         return w;
     };
@@ -657,11 +675,9 @@ function generateMathProblem() {
     let finalValues = [];
 
     // --- SET 1 (for Upright/Player 1) ---
-    // Take values from baseSet
     baseSet.forEach(v => finalValues.push({val: v, group: 1}));
 
     // --- SET 2 (for Flipped/Player 2) ---
-    // Take EXACT SAME values from baseSet
     baseSet.forEach(v => finalValues.push({val: v, group: 2}));
 
     // Shuffle spatially
@@ -714,9 +730,12 @@ function spawnMathItems(valuesWithMeta, correctVal) {
 function updateMathLogic() {
     if (gameOver) return;
     if (!mathProblem) {
+        // If there are still items on the field but the math timer ran out, clear them
+        if (items.length > 0) items = []; 
         if (items.length === 0) { mathProblem = generateMathProblem(); mathTimer = 600; }
     } else {
         mathTimer--;
+        // If the problem is solved (items.length === 0) or time runs out, clear the problem
         if (mathTimer <= 0) { mathProblem = null; items = []; } else if (items.length === 0) mathProblem = null;
     }
 }
@@ -819,6 +838,7 @@ function startGame(mode) {
     initAudio();
     document.getElementById('start-screen').style.display = 'none';
     document.body.className = 'mode-' + mode;
+    document.getElementById('game-container').style.display = 'flex'; // Ensure container is visible
     initGame();
 }
 
@@ -846,7 +866,7 @@ function bindControls() {
         btn.addEventListener('mouseleave', (e) => { keys[key] = false; btn.classList.remove('pressed'); });
     });
     
-    window.addEventListener('keydown', e => { keys[e.code] = true; if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight","Space"].indexOf(e.code)>-1)e.preventDefault(); initAudio(); });
+    window.addEventListener('keydown', e => { keys[e.code] = true; if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight","Space","Enter"].indexOf(e.code)>-1)e.preventDefault(); initAudio(); });
     window.addEventListener('keyup', e => keys[e.code] = false);
 
     document.getElementById('btn-restart').addEventListener('click', () => {
@@ -865,6 +885,7 @@ function initGame() {
         }
     }
     
+    // Adjusted initial base HP to 5 to match initial UI display
     p1 = new Tank(1, 165, 525, "#2ecc71", {up: "KeyW", down: "KeyS", left: "KeyA", right: "KeyD", shoot: "Space"});
     p2 = new Tank(2, 605, 45, "#3498db", {up: "ArrowUp", down: "ArrowDown", left: "ArrowLeft", right: "ArrowRight", shoot: "Enter"});
     
