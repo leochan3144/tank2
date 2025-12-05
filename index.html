@@ -257,7 +257,7 @@
             order: 2;
             flex: 1;
             z-index: 1; /* Ensure it sits under UI if overlapping */
-    transform: translateY(-20px); /* Moves the battlefield 50px UP */
+            transform: translateY(-20px); /* Moves the battlefield 50px UP */
         }
 
 
@@ -289,6 +289,17 @@
         }
         body.mode-portrait-2 #p1-zone .controls-row { align-items: flex-start; }
         body.mode-portrait-2 #p2-zone .controls-row { align-items: flex-end; }
+        
+        /* UPDATED SHIFTS FOR PORTRAIT 2 */
+        body.mode-portrait-2 #p1-zone .btn-shoot {
+            margin-left: 40px; /* Shift P1 shoot right */
+        }
+        body.mode-portrait-2 #p2-zone .btn-shoot {
+            margin-right: 40px; /* Shift P2 shoot left */
+        }
+        body.mode-portrait-2 .dpad {
+            transform: translateY(-40px); /* Shift D-pads upward */
+        }
 
         /* Modal styling */
         #game-over-modal {
