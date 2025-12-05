@@ -214,7 +214,6 @@
         body.mode-portrait-1 #p2-zone {
             order: 1;
             background: #2c3e50;
-            /* border-bottom: 4px solid #3498db; -- REMOVED */
             padding-top: 20px !important;
         }
         body.mode-portrait-1 #p2-inner {
@@ -226,7 +225,6 @@
         body.mode-portrait-1 #p1-zone {
             order: 3;
             background: #2c3e50;
-            /* border-top: 4px solid #2ecc71; -- REMOVED */
             padding-top: 0px !important;
         }
         body.mode-portrait-1 #p1-inner {
@@ -240,13 +238,13 @@
             width: 100%;
         }
         
-        /* UPDATED LOGIC: SHIFT INFO STACKS FOR PORTRAIT 1 */
+        /* SHIFT INFO STACKS FOR PORTRAIT 1 (P1: 65px Up, P2: 75px Down) */
         body.mode-portrait-1 #p1-zone .info-stack {
-            transform: translateY(-65px); /* Total shift: 60px + 5px = 65px Up */
+            transform: translateY(-65px); /* KEPT at 65px Up */
         }
         body.mode-portrait-1 #p2-zone .info-stack {
-            /* P2 is rotated 180deg. Local "-65px" (Up) = Screen "+65px" (Down). */
-            transform: translateY(-65px); 
+            /* P2 is rotated 180deg. Local "-75px" (Up) = Screen "+75px" (Down). */
+            transform: translateY(-75px); 
         }
 
         body.mode-portrait-1 .player-info { flex: 1; margin-right: 10px; }
@@ -256,7 +254,15 @@
         body.mode-portrait-1 .controls-row {
             justify-content: space-between;
             width: 100%;
-            margin-top: -80px; /* Kept in original position */
+            margin-top: -80px; /* Base position */
+        }
+
+        /* D-PAD SHIFTS */
+        body.mode-portrait-1 #p1-zone .controls-row {
+            margin-top: -75px; /* P1 D-pad Downward 5px (from -80px) */
+        }
+        body.mode-portrait-1 #p2-zone .controls-row {
+            margin-top: -82px; /* P2 D-pad Upward 2px (from -80px) */
         }
 
         /* Fix P2 Controls Logic (Swapped grid) */
@@ -268,7 +274,7 @@
         body.mode-portrait-1 #game-wrapper {
             order: 2;
             flex: 1;
-            z-index: 1; /* Ensure it sits under UI if overlapping */
+            z-index: 1; 
             transform: translateY(-20px); /* Battlefield position UNCHANGED */
         }
 
