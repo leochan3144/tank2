@@ -109,6 +109,8 @@
             gap: 5px;
             width: 100%;
             margin-bottom: 5px;
+            /* Transition for smooth movement if modes change */
+            transition: transform 0.2s ease;
         }
 
         .player-info {
@@ -237,6 +239,18 @@
             justify-content: space-between;
             width: 100%;
         }
+        
+        /* NEW LOGIC: SHIFT INFO STACKS FOR PORTRAIT 1 */
+        body.mode-portrait-1 #p1-zone .info-stack {
+            transform: translateY(-20px); /* Screen Up */
+        }
+        body.mode-portrait-1 #p2-zone .info-stack {
+            /* P2 is rotated 180deg. 
+               Local "-20px" (Up) = Screen "+20px" (Down). 
+            */
+            transform: translateY(-20px); 
+        }
+
         body.mode-portrait-1 .player-info { flex: 1; margin-right: 10px; }
         body.mode-portrait-1 .math-box { flex: 1; }
 
@@ -257,7 +271,7 @@
             order: 2;
             flex: 1;
             z-index: 1; /* Ensure it sits under UI if overlapping */
-            transform: translateY(-20px); /* Moves the battlefield 50px UP */
+            transform: translateY(-20px); /* Moves the battlefield 20px UP */
         }
 
 
@@ -274,7 +288,7 @@
         
         body.mode-portrait-2 .btn, 
         body.mode-portrait-2 .btn-shoot, 
-        body.mode-portrait-2 .player-info,
+        body.mode-portrait-2 .player-info, 
         body.mode-portrait-2 .math-box {
             background: rgba(0, 0, 0, 0.15);
             backdrop-filter: none;
@@ -290,15 +304,15 @@
         body.mode-portrait-2 #p1-zone .controls-row { align-items: flex-start; }
         body.mode-portrait-2 #p2-zone .controls-row { align-items: flex-end; }
         
-        /* UPDATED SHIFTS FOR PORTRAIT 2 */
+        /* SHIFTS FOR PORTRAIT 2 (Preserved from previous request) */
         body.mode-portrait-2 #p1-zone .btn-shoot {
-            margin-left: 115px; /* Shifted further right (100+15) */
+            margin-left: 115px; /* Shift P1 shoot right */
         }
         body.mode-portrait-2 #p2-zone .btn-shoot {
-            margin-right: 115px; /* Shifted further left (100+15) */
+            margin-right: 115px; /* Shift P2 shoot left */
         }
         body.mode-portrait-2 .dpad {
-            transform: translateY(-70px); /* Maintained previous shift */
+            transform: translateY(-70px); /* Shift D-pads upward */
         }
 
         /* Modal styling */
